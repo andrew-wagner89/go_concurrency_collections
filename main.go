@@ -13,15 +13,7 @@ import (
 var numthreads = 8
 var itersperthread = 1024 * 1024
 
-type List interface {
-	Insert(key int) bool
-	Remove(key int) bool
-	Contains(key int) bool
-	Init()
-	Printlist()
-}
-
-func testList(list List, seed int, wg *sync.WaitGroup) {
+func testList(list Lists.List, seed int, wg *sync.WaitGroup) {
 	fmt.Printf("Testing with thread %d\n", seed)
 	rand.Seed((int64)(seed))
 	method := rand.Intn(3)
@@ -53,7 +45,7 @@ func main() {
 		fmt.Println(e)
 		os.Exit(1)
 	}
-	var list List
+	var list Lists.List
 
 	switch input {
 	case 1:
