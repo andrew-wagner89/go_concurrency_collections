@@ -1,4 +1,4 @@
-package main
+package lock_free_list
 
 import (
 	"fmt"

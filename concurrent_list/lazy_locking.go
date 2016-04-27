@@ -1,4 +1,4 @@
-package main
+package lazy_locking_list
 
 import (
 	"fmt"

@@ -1,6 +1,6 @@
-package main
+package concurrent_list
 
-type List interface {
+type Concurrent_List interface {
 	printlist()
 	insert(int) bool
 	contains(int) bool

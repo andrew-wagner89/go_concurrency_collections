@@ -1,4 +1,4 @@
-package main
+package coarse_grain_list
 
 import (
 	"fmt"
