@@ -1,16 +1,19 @@
-package coarse_grain_list
+package Lists
 
 import (
 	"fmt"
 	"sync"
 )
 
+//Class LazyList
+//Constructor: NewLazyList()
+
 type Node struct {
 	key  int
 	next *Node
 }
 
-type Coarse_Grain_List struct {
+type CGList struct {
 	head      *Node
 	tail      *Node
 	list_lock *sync.Mutex
@@ -23,15 +26,13 @@ func make_node(key int, next *Node) *Node {
 	return n
 }
 
-func NewList() *Coarse_Grain_List {
-	l := new(Coarse_Grain_List)
+func (l *CGList) Init() {
 	l.tail = make_node(2147483647, nil)
 	l.head = make_node(-2147483648, l.tail)
 	l.list_lock = &sync.Mutex{}
-	return l
 }
 
-func (l *Coarse_Grain_List) printlist() {
+func (l *CGList) Printlist() {
 	l.list_lock.Lock()
 
 	t := l.head
@@ -45,7 +46,7 @@ func (l *Coarse_Grain_List) printlist() {
 
 //Member funcs for List
 
-func (l *Coarse_Grain_List) insert(key int) bool {
+func (l *CGList) Insert(key int) bool {
 	var returnval bool
 	pred := l.head
 	curr := pred.next
@@ -71,7 +72,7 @@ func (l *Coarse_Grain_List) insert(key int) bool {
 
 }
 
-func (l *Coarse_Grain_List) contains(key int) bool {
+func (l *CGList) Contains(key int) bool {
 	l.list_lock.Lock()
 
 	var curr *Node = l.head
@@ -85,7 +86,7 @@ func (l *Coarse_Grain_List) contains(key int) bool {
 	return curr.key == key
 }
 
-func (l *Coarse_Grain_List) remove(key int) bool {
+func (l *CGList) Remove(key int) bool {
 	var returnval bool
 	l.list_lock.Lock()
 
