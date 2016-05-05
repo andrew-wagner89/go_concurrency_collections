@@ -9,8 +9,10 @@ import (
 //Constructor: NewLazyList()
 
 type Node struct {
-	key  int
 	next *Node
+	key interface {}
+	val interface {}
+	hash uint64
 }
 
 type CGList struct {
@@ -19,16 +21,21 @@ type CGList struct {
 	list_lock *sync.Mutex
 }
 
-func make_node(key int, next *Node) *Node {
+func make_node(key interface {}, val interface {}, next *Node) *Node {
 	n := new(Node)
 	n.key = key
+	n.val = val
 	n.next = next
+	hash,_ := getHash(key)
+	n.hash = uint64(hash)
 	return n
 }
 
 func (l *CGList) Init() {
-	l.tail = make_node(2147483647, nil)
-	l.head = make_node(-2147483648, l.tail)
+	l.tail = make_node(2147483648, nil, nil)
+	l.head = make_node(-2147483649, nil,  l.tail)
+	l.head.hash = MIN_UINT64
+	l.tail.hash = MAX_UINT64
 	l.list_lock = &sync.Mutex{}
 }
 
@@ -37,7 +44,7 @@ func (l *CGList) Printlist() {
 
 	t := l.head
 	for t != nil {
-		fmt.Println(t.key)
+		fmt.Printf("%+v: %+v", t.key ,t.val)
 		t = t.next
 	}
 
@@ -46,22 +53,28 @@ func (l *CGList) Printlist() {
 
 //Member funcs for List
 
-func (l *CGList) Insert(key int) bool {
+func (l *CGList) Insert(key interface{}, val interface{}) bool {
 	var returnval bool
+
+	var keyHash uint64
+	hash32, _ := getHash(key)
+	keyHash = uint64(hash32)
+
 	pred := l.head
 	curr := pred.next
 
-	for curr.key < key {
+	for curr.hash < keyHash {
 		pred = curr
 		curr = curr.next
 	}
 
 	l.list_lock.Lock()
 
-	if curr.key == key {
+	if curr.hash == keyHash && curr.key == key {
+
 		returnval = false
 	} else {
-		new_node := make_node(key, curr)
+		new_node := make_node(key,val, curr)
 		pred.next = new_node
 		returnval = true
 	}
@@ -72,39 +85,59 @@ func (l *CGList) Insert(key int) bool {
 
 }
 
-func (l *CGList) Contains(key int) bool {
+func (l *CGList) Contains(key interface{}) (interface{}, bool) {
 	l.list_lock.Lock()
+
+	var keyHash uint64
+	hash32, _ := getHash(key)
+	keyHash = uint64(hash32)
 
 	var curr *Node = l.head
 
-	for curr.key < key {
+	for curr.hash < keyHash {
+		curr = curr.next
+	}
+
+	for curr.hash == keyHash {
+		if curr.hash == keyHash && curr.key == key {
+			l.list_lock.Unlock()
+			return curr.val , true
+		}
 		curr = curr.next
 	}
 
 	l.list_lock.Unlock()
 
-	return curr.key == key
+	return nil, false
 }
 
-func (l *CGList) Remove(key int) bool {
-	var returnval bool
+func (l *CGList) Remove(key interface{}) bool {
 	l.list_lock.Lock()
+
+	var keyHash uint64
+	hash32, _ := getHash(key)
+	keyHash = uint64(hash32)
 
 	pred := l.head
 	curr := l.head.next
 
-	for curr.key < key {
+	
+	for curr.hash < keyHash {
 		pred = curr
 		curr = curr.next
 	}
 
-	if curr.key != key {
-		returnval = false
-	} else {
-		pred.next = curr.next
-		returnval = true
+	for curr.hash == keyHash {
+		if curr.hash == keyHash && curr.key == key {
+			pred.next = curr.next
+			l.list_lock.Unlock()
+			return true
+		}
+		pred = curr
+		curr = curr.next
 	}
 
+
 	l.list_lock.Unlock()
-	return returnval
+	return false
 }

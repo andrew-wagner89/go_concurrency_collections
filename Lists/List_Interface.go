@@ -1,9 +1,9 @@
 package Lists
 
 type List interface {
-	Insert(key int) bool
-	Remove(key int) bool
-	Contains(key int) bool
+	Insert(key interface{},val interface{}) bool
+	Remove(key interface{}) bool
+	Contains(key interface{}) (interface{}, bool)
 	Init()
 	Printlist()
 }
