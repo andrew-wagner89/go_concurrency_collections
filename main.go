@@ -10,17 +10,19 @@ import (
 	"time"
 )
 
-var numthreads = 8
-var itersperthread = 1024 * 1024
+var numthreads = 4
+var itersperthread = 1024
 
 func testList(list Lists.List, seed int, wg *sync.WaitGroup) {
+	fmt.Printf("MAX:%d\n",Lists.MAX_UINT64)
 	fmt.Printf("Testing with thread %d\n", seed)
 	rand.Seed((int64)(seed))
 	method := rand.Intn(3)
 	key := rand.Intn(256)
+	val := rand.Intn(256)
 	for i := 0; i < itersperthread; i++ {
 		if method == 0 {
-			list.Insert(key)
+			list.Insert(key,val)
 		} else if method == 1 {
 			list.Remove(key)
 		} else {
@@ -50,10 +52,10 @@ func main() {
 	switch input {
 	case 1:
 		list = new(Lists.CGList)
-	case 2:
-		list = new(Lists.LFList)
-	case 3:
-		list = new(Lists.LazyList)
+	//case 2:
+		//list = new(Lists.LFList)
+	//case 3:
+		//list = new(Lists.LazyList)
 	default:
 		fmt.Printf("improper input detected")
 		os.Exit(1)
