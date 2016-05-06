@@ -8,6 +8,12 @@ import (
 
 //Class LFList
 //Constructor: NewLFList()
+/*
+Harris lock-free list
+From :
+A Pragmatic Implementation of Non-Blocking Linked-Lists
+by Timothy L. Harris (2001)
+*/
 
 type Mark int32
 
@@ -17,8 +23,10 @@ const (
 )
 
 type NodeLF struct {
-	key    int
 	next   *NodeLF
+	key    interface{}
+	val    interface{}
+	hash   uint64
 	marked Mark
 }
 
@@ -27,29 +35,38 @@ type LFList struct {
 	tail *NodeLF
 }
 
-func make_nodeLF(key int, next *NodeLF) *NodeLF {
+func make_nodeLF(key interface{}, val interface{}, next *NodeLF) *NodeLF {
 	n := new(NodeLF)
 	n.key = key
+	n.val = val
 	n.next = next
+	hash, _ := getHash(key)
+	n.hash = uint64(hash)
 	n.marked = UNMARKED
 	return n
 }
 
 func (l *LFList) Init() {
-	l.tail = make_nodeLF(2147483647, nil)
-	l.head = make_nodeLF(-2147483648, l.tail)
+	l.tail = make_nodeLF(0, nil, nil)
+	l.head = make_nodeLF(0, nil, l.tail)
+	l.head.hash = MIN_UINT64
+	l.tail.hash = MAX_UINT64
 }
 
 func (l *LFList) Printlist() {
 	t := l.head
 	for t != nil {
-		fmt.Println(t.key)
+		fmt.Printf("%+v: %+v", t.key, t.val)
 		t = t.next
 	}
 }
 
 //Member funcs for LFList
-func (l *LFList) search(key int, left_node **NodeLF) *NodeLF {
+func (l *LFList) search(key interface{}, left_node **NodeLF) *NodeLF {
+	var keyHash uint64
+	hash32, _ := getHash(key)
+	keyHash = uint64(hash32)
+
 	var left_node_next *NodeLF
 	var right_node *NodeLF
 
@@ -60,7 +77,7 @@ search_again:
 
 		/* 1: Find left_node and right_node */
 	inner:
-		for ok := true; ok; ok = (t_next.marked == MARKED || (t.key < key)) {
+		for ok := true; ok; ok = (t_next.marked == MARKED || (t.hash <= keyHash)) {
 			if t_next.marked != MARKED { //Not marked for deletion
 				(*left_node) = t
 				left_node_next = t_next
@@ -70,6 +87,11 @@ search_again:
 				break inner
 			}
 			t_next = t.next
+
+			//Check key equality
+			if t.key == key {
+				break inner
+			}
 		}
 		right_node = t
 
@@ -96,8 +118,8 @@ search_again:
 	}
 }
 
-func (l *LFList) Insert(key int) bool {
-	new_node := make_nodeLF(key, nil)
+func (l *LFList) Insert(key interface{}, val interface{}) bool {
+	new_node := make_nodeLF(key, val, nil)
 	var right_node *NodeLF
 	var left_node *NodeLF
 	for {
@@ -115,18 +137,18 @@ func (l *LFList) Insert(key int) bool {
 	}
 }
 
-func (l *LFList) Contains(key int) bool {
+func (l *LFList) Get(key interface{}) (interface{}, bool) {
 	var right_node *NodeLF
 	var left_node *NodeLF
 	right_node = l.search(key, &left_node)
 	if (right_node == l.tail) || (right_node.key != key) {
-		return false
+		return right_node.val, false
 	} else {
-		return true
+		return right_node.val, true
 	}
 }
 
-func (l *LFList) Remove(key int) bool {
+func (l *LFList) Remove(key interface{}) bool {
 	var right_node *NodeLF
 	var right_node_next *NodeLF
 	var left_node *NodeLF
