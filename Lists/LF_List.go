@@ -8,12 +8,6 @@ import (
 
 //Class LFList
 //Constructor: NewLFList()
-/*
-Harris lock-free list
-From :
-A Pragmatic Implementation of Non-Blocking Linked-Lists
-by Timothy L. Harris (2001)
-*/
 
 type Mark int32
 
@@ -30,6 +24,12 @@ type NodeLF struct {
 	marked Mark
 }
 
+/*
+Harris lock-free list
+From :
+A Pragmatic Implementation of Non-Blocking Linked-Lists
+by Timothy L. Harris (2001)
+*/
 type LFList struct {
 	head *NodeLF
 	tail *NodeLF
@@ -41,7 +41,7 @@ func make_nodeLF(key interface{}, val interface{}, next *NodeLF) *NodeLF {
 	n.val = val
 	n.next = next
 	hash, _ := getHash(key)
-	n.hash = uint64(hash)
+	n.hash = hash
 	n.marked = UNMARKED
 	return n
 }
@@ -61,7 +61,9 @@ func (l *LFList) Printlist() {
 	}
 }
 
-//Member funcs for LFList
+//Helper func for LFList
+//Returns node either == to key, or just > than (hash)
+//Also sets left_node to be just to the left of returned
 func (l *LFList) search(key interface{}, left_node **NodeLF) *NodeLF {
 	var keyHash uint64
 	hash32, _ := getHash(key)
@@ -89,7 +91,7 @@ search_again:
 			t_next = t.next
 
 			//Check key equality
-			if t.key == key {
+			if t.hash == keyHash && t.key == key {
 				break inner
 			}
 		}
@@ -118,6 +120,7 @@ search_again:
 	}
 }
 
+//TODO: Allow updates?
 func (l *LFList) Insert(key interface{}, val interface{}) bool {
 	new_node := make_nodeLF(key, val, nil)
 	var right_node *NodeLF

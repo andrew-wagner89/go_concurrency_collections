@@ -11,14 +11,14 @@ import (
 )
 
 var numthreads = 8
-var itersperthread = 1024 * 64
+var itersperthread = 1024 * 256
 
 func testList(list Lists.List, seed int, wg *sync.WaitGroup) {
 	fmt.Printf("Testing with thread %d\n", seed)
 	rand.Seed((int64)(seed))
 	method := rand.Intn(3)
-	key := rand.Intn(256)
-	val := rand.Intn(256)
+	key := rand.Intn(4096)
+	val := rand.Intn(4096)
 	for i := 0; i < itersperthread; i++ {
 		if method == 0 {
 			list.Insert(key, val)
