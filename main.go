@@ -10,8 +10,8 @@ import (
 	"time"
 )
 
-var numthreads = 4
-var itersperthread = 1024
+var numthreads = 8
+var itersperthread = 1024 * 64
 
 func testList(list Lists.List, seed int, wg *sync.WaitGroup) {
 	fmt.Printf("Testing with thread %d\n", seed)

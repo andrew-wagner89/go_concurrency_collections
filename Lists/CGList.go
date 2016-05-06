@@ -139,3 +139,7 @@ func (l *CGList) Remove(key interface{}) bool {
 	l.list_lock.Unlock()
 	return false
 }
+
+func (l *CGList) TestCollision() {
+	return
+}

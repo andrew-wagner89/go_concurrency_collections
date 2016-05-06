@@ -56,7 +56,7 @@ func (l *LFList) Init() {
 func (l *LFList) Printlist() {
 	t := l.head
 	for t != nil {
-		fmt.Printf("%+v: %+v", t.key, t.val)
+		fmt.Printf("%+v (%d): %+v\n", t.key, t.hash, t.val)
 		t = t.next
 	}
 }
@@ -177,4 +177,14 @@ func (l *LFList) Remove(key interface{}) bool {
 		right_node = l.search(right_node.key, &left_node)
 	}
 	return true
+}
+
+func (l *LFList) TestCollision() {
+	new_node2 := make_nodeLF(2, 4, l.tail)
+	new_node1 := make_nodeLF(2, 3, new_node2)
+	l.head.next = new_node1
+	new_node1.key = 3 //Change [Either] key w/o changing hash
+	l.Printlist()
+	val, _ := l.Get(2)
+	fmt.Println(val)
 }
