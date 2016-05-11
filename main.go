@@ -53,8 +53,8 @@ func main() {
 		list = new(Lists.CGList)
 	case 2:
 		list = new(Lists.LFList)
-	//case 3:
-	//list = new(Lists.LazyList)
+	case 3:
+	list = new(Lists.LazyList)
 	default:
 		fmt.Printf("improper input detected")
 		os.Exit(1)

@@ -9,9 +9,11 @@ import (
 //Constructor: NewLazyList()
 
 type NodeLL struct {
-	key    int
+	key    interface{}
+	val    interface{}
 	next   *NodeLL
 	marked bool
+	hash uint64
 	lock   *sync.Mutex
 }
 
@@ -20,24 +22,31 @@ type LazyList struct {
 	tail *NodeLL
 }
 
-func make_nodeLL(key int, next *NodeLL) *NodeLL {
+func make_nodeLL(key interface{},val interface{}, next *NodeLL) *NodeLL {
 	n := new(NodeLL)
 	n.key = key
+	n.val = val
 	n.next = next
 	n.marked = false
+	hash, _ := getHash(key)
+	n.hash = uint64(hash)
 	n.lock = &sync.Mutex{}
 	return n
 }
 
 func (l *LazyList) Init() {
-	l.tail = make_nodeLL(2147483647, nil)
-	l.head = make_nodeLL(-2147483648, l.tail)
+	l.tail = make_nodeLL(0, nil, nil)
+	l.head = make_nodeLL(0, nil, l.tail)
+	l.head.hash = MIN_UINT64
+	l.tail.hash = MAX_UINT64
+
 }
 
 func (l *LazyList) Printlist() {
+
 	t := l.head
 	for t != nil {
-		fmt.Println(t.key)
+		fmt.Printf("%+v: %+v", t.key, t.val)
 		t = t.next
 	}
 }
@@ -48,13 +57,18 @@ func validate(pred *NodeLL, curr *NodeLL) bool {
 
 //Member funcs for LazyList
 
-func (l *LazyList) Insert(key int) bool {
+func (l *LazyList) Insert(key interface{}, val interface{}) bool {
 	var returnval bool
+
+	var keyHash uint64
+	hash32, _ := getHash(key)
+	keyHash = uint64(hash32)
+
 	for {
 		pred := l.head
 		curr := pred.next
 
-		for curr.key < key {
+		for curr.hash < keyHash {
 			pred = curr
 			curr = curr.next
 		}
@@ -62,10 +76,10 @@ func (l *LazyList) Insert(key int) bool {
 		pred.lock.Lock()
 
 		if validate(pred, curr) {
-			if curr.key == key {
+			if curr.hash == keyHash && curr.key == key {
 				returnval = false
 			} else {
-				new_node := make_nodeLL(key, curr)
+				new_node := make_nodeLL(key, val, curr)
 				pred.next = new_node
 				returnval = true
 			}
@@ -78,22 +92,43 @@ func (l *LazyList) Insert(key int) bool {
 	return returnval
 }
 
-func (l *LazyList) Contains(key int) bool {
+func (l *LazyList) Get(key interface{}) (interface{}, bool) {
+
+	var keyHash uint64
+	hash32, _ := getHash(key)
+	keyHash = uint64(hash32)
+
 	var curr *NodeLL = l.head
-	for curr.key < key {
+
+	for curr.hash < keyHash {
 		curr = curr.next
 	}
 
-	return (curr.key == key) && (!curr.marked)
+	for curr.hash == keyHash {
+		if curr.hash == keyHash && curr.key == key {
+			if !curr.marked {
+				return curr.val, true
+			}
+		}
+		curr = curr.next
+	}
+
+	return nil, false
 }
 
-func (l *LazyList) Remove(key int) bool {
-	var returnval bool
+func (l *LazyList) Remove(key interface{}) bool {
+	returnval := false
+	breakInfinite := false
+
+	var keyHash uint64
+	hash32, _ := getHash(key)
+	keyHash = uint64(hash32)
+
 	for {
 		pred := l.head
 		curr := l.head.next
 
-		for curr.key < key {
+		for curr.hash < keyHash {
 			pred = curr
 			curr = curr.next
 		}
@@ -101,14 +136,28 @@ func (l *LazyList) Remove(key int) bool {
 		pred.lock.Lock()
 		curr.lock.Lock()
 
-		if validate(pred, curr) {
-			if curr.key != key {
-				returnval = false
-			} else {
-				curr.marked = true
-				pred.next = curr.next
-				returnval = true
+
+		if curr.hash == keyHash{
+			for curr.hash == keyHash {
+				if validate(pred, curr) {
+					if curr.key == key{
+						curr.marked = true
+						pred.next = curr.next
+						returnval = true
+						breakInfinite = true
+						break
+					} else {
+						pred = curr
+						curr = curr.next
+						continue
+					}
+				} else {
+					continue
+				}
+
 			}
+		} else {
+			returnval = false
 			pred.lock.Unlock()
 			curr.lock.Unlock()
 			break
@@ -116,6 +165,11 @@ func (l *LazyList) Remove(key int) bool {
 
 		pred.lock.Unlock()
 		curr.lock.Unlock()
+
+		if breakInfinite {
+			break
+		}
 	}
+
 	return returnval
 }
