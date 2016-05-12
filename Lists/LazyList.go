@@ -77,7 +77,8 @@ func (l *LazyList) Insert(key interface{}, val interface{}) bool {
 
 		if validate(pred, curr) {
 			if curr.hash == keyHash && curr.key == key {
-				returnval = false
+				curr.val = val
+				returnval = true
 			} else {
 				new_node := make_nodeLL(key, val, curr)
 				pred.next = new_node
