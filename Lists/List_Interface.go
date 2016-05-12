@@ -4,6 +4,7 @@ type List interface {
 	/* Inserts the key,val pair into the list
 	Returns true when key was not in the list
 	Returns false if key is already in the list
+		Still updates the val in this case
 	*/
 	Insert(key interface{}, val interface{}) bool
 

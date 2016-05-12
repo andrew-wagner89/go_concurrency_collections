@@ -9,19 +9,40 @@ import (
 //Class LFList
 //Constructor: NewLFList()
 
-type Mark int32
-
-const (
-	MARKED Mark = 1 + iota
-	UNMARKED
-)
+func isMarked(ptr *NodeLF) bool {
+	addr := (uintptr)(unsafe.Pointer(ptr))
+	ret := (addr & 1) == 1
+	return ret
+}
+func setMarked(ptr *NodeLF) *NodeLF {
+	addr := (uintptr)(unsafe.Pointer(ptr))
+	newaddr := unsafe.Pointer(addr | 1)
+	return (*NodeLF)(newaddr)
+}
+func setUnmarked(ptr *NodeLF) *NodeLF {
+	addr := (uintptr)(unsafe.Pointer(ptr))
+	//If on 32 bit machine, change this to be a 32 bit value
+	newaddr := unsafe.Pointer(addr & (uintptr)(0xFFFFFFFFFFFFFFFE))
+	return (*NodeLF)(newaddr)
+}
+func TestMarks() {
+	node := new(NodeLF)
+	fmt.Printf("Start: %p\n", node)
+	fmt.Printf("Marked? : %t\n", isMarked(node))
+	fmt.Printf("unmarked(node) : %p\n", setUnmarked(node))
+	node = setMarked(node)
+	fmt.Printf("Marked node: %p\n", node)
+	fmt.Printf("Marked? : %t\n", isMarked(node))
+	node = setUnmarked(node)
+	fmt.Printf("Unmarked node: %p\n", node)
+	fmt.Printf("Marked? : %t\n", isMarked(node))
+}
 
 type NodeLF struct {
-	next   *NodeLF
-	key    interface{}
-	val    interface{}
-	hash   uint64
-	marked Mark
+	next *NodeLF
+	key  interface{}
+	val  interface{}
+	hash uint64
 }
 
 /*
@@ -42,7 +63,6 @@ func make_nodeLF(key interface{}, val interface{}, next *NodeLF) *NodeLF {
 	n.next = next
 	hash, _ := getHash(key)
 	n.hash = hash
-	n.marked = UNMARKED
 	return n
 }
 
@@ -79,12 +99,12 @@ search_again:
 
 		/* 1: Find left_node and right_node */
 	inner:
-		for ok := true; ok; ok = (t_next.marked == MARKED || (t.hash <= keyHash)) {
-			if t_next.marked != MARKED { //Not marked for deletion
+		for ok := true; ok; ok = (isMarked(t_next) || (t.hash <= keyHash)) {
+			if !isMarked(t_next) { //Not marked for deletion
 				(*left_node) = t
 				left_node_next = t_next
 			}
-			t = t_next
+			t = setUnmarked(t_next)
 			if t == l.tail {
 				break inner
 			}
@@ -99,7 +119,7 @@ search_again:
 
 		/* 2: Check nodes are adjacent */
 		if left_node_next == right_node {
-			if (right_node != l.tail) && (right_node.next.marked == MARKED) {
+			if (right_node != l.tail) && isMarked(right_node.next) {
 				goto search_again //Marked for deletion, try again
 			} else {
 				return right_node //Success
@@ -110,8 +130,9 @@ search_again:
 		if atomic.CompareAndSwapPointer(
 			(*unsafe.Pointer)(unsafe.Pointer(&(*left_node).next)),
 			unsafe.Pointer(left_node_next),
+			//Segfault?
 			unsafe.Pointer(right_node)) {
-			if (right_node != l.tail) && (right_node.next.marked == MARKED) {
+			if (right_node != l.tail) && isMarked(right_node.next) {
 				goto search_again //Should delete right node
 			} else {
 				return right_node //Sucess
@@ -120,15 +141,16 @@ search_again:
 	}
 }
 
-//TODO: Allow updates?
 func (l *LFList) Insert(key interface{}, val interface{}) bool {
 	new_node := make_nodeLF(key, val, nil)
 	var right_node *NodeLF
 	var left_node *NodeLF
 	for {
 		right_node = l.search(key, &left_node)
-		if (right_node != l.tail) && (right_node.key == key) {
-			return false //Already in list
+		if (right_node != l.tail) && (right_node.key == key) { //Update val
+			//TODO:Use atomic ops here!
+			right_node.val = val
+			return false
 		}
 		new_node.next = right_node
 		if atomic.CompareAndSwapPointer(
@@ -161,12 +183,12 @@ func (l *LFList) Remove(key interface{}) bool {
 			return false //Not in the list
 		}
 		right_node_next = right_node.next
-		if right_node.marked == UNMARKED {
+		if !isMarked(right_node_next) { //If unmarked
 			//Set marked
-			if atomic.CompareAndSwapInt32(
-				(*int32)(&right_node.marked),
-				(int32)(UNMARKED),
-				(int32)(MARKED)) {
+			if atomic.CompareAndSwapPointer(
+				(*unsafe.Pointer)(unsafe.Pointer(&right_node.next)),
+				(unsafe.Pointer)(right_node_next),
+				(unsafe.Pointer)(setMarked(right_node_next))) {
 				break //Succesful mark to delete
 			}
 		}

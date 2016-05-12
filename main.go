@@ -10,10 +10,9 @@ import (
 	"time"
 )
 
-var numthreads = 8
-var itersperthread = 1024 * 256
+var numthreads = 4
+var itersperthread = 1024 * 64
 var maxkeyval = 4096
-
 
 func testList(list Lists.List, seed int, wg *sync.WaitGroup) {
 	fmt.Printf("Testing with thread %d\n", seed)
@@ -59,9 +58,9 @@ func main() {
 	case 2:
 		list = new(Lists.LFList)
 	case 3:
-	list = new(Lists.LazyList)
+		list = new(Lists.LazyList)
 	default:
-		fmt.Printf("improper input detected")
+		fmt.Printf("improper input detected\n")
 		os.Exit(1)
 	}
 	list.Init()

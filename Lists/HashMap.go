@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 )
+
 type HashMap struct {
-	buckets []List
-	numBuckets int
+	buckets      []List
+	numBuckets   int
 	numPerBucket uint64
 }
 
@@ -18,15 +19,15 @@ func (hm *HashMap) Init(numBuckets int, listType int) {
 
 	for i := 0; i < numBuckets; i++ {
 		switch listType {
-			case 1:
-				hm.buckets[i] = new(CGList)
-			case 2:
-				hm.buckets[i] = new(LFList)
-			case 3:
-				hm.buckets[i] = new(LazyList)
-			default:
-				fmt.Printf("improper hashmap type detected")
-				os.Exit(1)
+		case 1:
+			hm.buckets[i] = new(CGList)
+		case 2:
+			hm.buckets[i] = new(LFList)
+		case 3:
+			hm.buckets[i] = new(LazyList)
+		default:
+			fmt.Printf("improper hashmap type detected\n")
+			os.Exit(1)
 		}
 
 		hm.buckets[i].Init()

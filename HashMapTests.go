@@ -11,7 +11,7 @@ import (
 )
 
 var numthreads = 8
-var itersperthread = 1024 * 256
+var itersperthread = 1024 * 64
 var maxkeyval = 4096
 var numBuckets = 12
 
@@ -25,7 +25,7 @@ func testMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup) {
 		key = rand.Intn(maxkeyval)
 		val = rand.Intn(maxkeyval)
 		method = rand.Intn(3)
-		
+
 		if method == 0 {
 			hMap.Insert(key, val)
 		} else if method == 1 {
@@ -53,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 	hMap := new(Lists.HashMap)
-	hMap.Init(numBuckets,input)
+	hMap.Init(numBuckets, input)
 
 	//fmt.Println("Running tests...")
 	//Lists.Runtests(list)
