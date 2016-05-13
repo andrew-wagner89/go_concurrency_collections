@@ -6,9 +6,11 @@ import (
 	"hash/fnv"
 )
 
-const MAX_UINT64 uint64 = 1<<64 - 1
-const MIN_UINT64 uint64 = 0
+const MAX_UINT64 uint64 = 1<<64 - 1 //max 64 bit number possible
+const MIN_UINT64 uint64 = 0 //min 64 bit number possible
 
+//returns the hash value of any interface
+//calculates hash based on the interface's bytes
 func getHash(key interface{}) (uint64, error) {
 	var buf bytes.Buffer
 	enc := gob.NewEncoder(&buf)
