@@ -84,7 +84,7 @@ func (l *LFList) Printlist() {
 //Helper func for LFList
 //Returns node either == to key, or just > than (hash)
 //Also sets left_node to be just to the left of returned
-func (l *LFList) searchWithHash(key interface{}, keyHash uint64, left_node **NodeLF) *NodeLF {
+func (l *LFList) search(key interface{}, keyHash uint64, left_node **NodeLF) *NodeLF {
 	var left_node_next *NodeLF
 	var right_node *NodeLF
 
@@ -135,17 +135,13 @@ search_again:
 		}
 	}
 }
-func (l *LFList) search(key interface{}, left_node **NodeLF) *NodeLF {
-	hash, _ := getHash(key)
-	return l.searchWithHash(key, hash, left_node)
-}
 
 func (l *LFList) Insert(key interface{}, val interface{}) bool {
 	new_node := make_nodeLF(key, val, nil)
 	var right_node *NodeLF
 	var left_node *NodeLF
 	for {
-		right_node = l.searchWithHash(key, new_node.hash, &left_node)
+		right_node = l.search(key, new_node.hash, &left_node)
 		if (right_node != l.tail) && (right_node.key == key) { //Update val
 			//TODO:Use atomic ops here!
 			//valptr := &(right_node.val)
@@ -176,7 +172,8 @@ func (l *LFList) Insert(key interface{}, val interface{}) bool {
 func (l *LFList) Get(key interface{}) (interface{}, bool) {
 	var right_node *NodeLF
 	var left_node *NodeLF
-	right_node = l.search(key, &left_node)
+	hash, _ := getHash(key)
+	right_node = l.search(key, hash, &left_node)
 	if (right_node == l.tail) || (right_node.key != key) {
 		return right_node.val, false
 	} else {
@@ -188,8 +185,9 @@ func (l *LFList) Remove(key interface{}) bool {
 	var right_node *NodeLF
 	var right_node_next *NodeLF
 	var left_node *NodeLF
+	hash, _ := getHash(key)
 	for {
-		right_node = l.search(key, &left_node)
+		right_node = l.search(key, hash, &left_node)
 		if (right_node == l.tail) || (right_node.key != key) {
 			return false //Not in the list
 		}
@@ -210,7 +208,7 @@ func (l *LFList) Remove(key interface{}) bool {
 		unsafe.Pointer(right_node),
 		unsafe.Pointer(right_node_next)) {
 		//Find marked nodes and delete them
-		right_node = l.search(right_node.key, &left_node)
+		right_node = l.search(right_node.key, hash, &left_node)
 	}
 	return true
 }

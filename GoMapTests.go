@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-var numthreads = 8
+var numthreads = 16
 var itersperthread = 1024 * 64
 var maxkeyval = 4096
-var numBuckets = 8
+var numBuckets = 4
 
 func testHash() {
 	rand.Seed((int64)(0))
@@ -31,8 +31,6 @@ func testHash() {
 
 //test function for the map, each thread will run this
 func testHashMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup) {
-
-	fmt.Printf("Testing with thread %d\n", seed)
 	rand.Seed((int64)(seed))
 	var method int
 	var key int
@@ -51,7 +49,6 @@ func testHashMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup) {
 		}
 	}
 	wg.Done()
-	fmt.Printf("Done with thread %d\n", seed)
 }
 
 func main() {
@@ -87,7 +84,6 @@ func main() {
 	var method int
 	var key int
 	var val int
-	var trash int
 	for i := 0; i < itersperthread*numthreads; i++ {
 		key = rand.Intn(maxkeyval)
 		val = rand.Intn(maxkeyval)
@@ -98,12 +94,11 @@ func main() {
 		} else if method == 1 {
 			delete(goMap, key)
 		} else {
-			trash = goMap[key]
+			_ = goMap[key]
 		}
 	}
 
 	elapsedSeq := time.Since(startSeq)
-	fmt.Printf("IGNORE: this output is to satisfy go%d\n\n\n", trash)
 	fmt.Printf("Finished testing %d threads with %d iterations per thread:\n",
 		numthreads, itersperthread)
 	fmt.Printf("Concurrent Hash map (%s) took: %s\n", *listTypeStr, elapsedConc)

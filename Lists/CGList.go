@@ -5,9 +5,6 @@ import (
 	"sync"
 )
 
-//Class LazyList
-//Constructor: NewLazyList()
-
 type Node struct {
 	next *Node
 	key  interface{}
@@ -54,6 +51,8 @@ func (l *CGList) Printlist() {
 //Member funcs for List
 
 func (l *CGList) Insert(key interface{}, val interface{}) bool {
+	l.list_lock.Lock()
+
 	var returnval bool
 
 	var keyHash uint64
@@ -67,11 +66,14 @@ func (l *CGList) Insert(key interface{}, val interface{}) bool {
 		pred = curr
 		curr = curr.next
 	}
-
-	l.list_lock.Lock()
+	for curr.hash == keyHash {
+		if curr.hash == keyHash && curr.key == key {
+			break
+		}
+		curr = curr.next
+	}
 
 	if curr.hash == keyHash && curr.key == key {
-
 		returnval = false
 	} else {
 		new_node := make_node(key, val, curr)
