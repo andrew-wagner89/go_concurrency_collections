@@ -2,10 +2,9 @@ package main
 
 import (
 	"./Lists"
+	"flag"
 	"fmt"
 	"math/rand"
-	"os"
-	"strconv"
 	"sync"
 	"time"
 )
@@ -13,7 +12,7 @@ import (
 var numthreads = 8
 var itersperthread = 1024 * 64
 var maxkeyval = 4096
-var numBuckets = 64
+var numBuckets = 8
 
 func testHash() {
 	rand.Seed((int64)(0))
@@ -52,26 +51,19 @@ func testHashMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup) {
 		}
 	}
 	wg.Done()
+	fmt.Printf("Done with thread %d\n", seed)
 }
 
 func main() {
 	testHash()
-	//take in input to see which list to use
-	//TODO: change to command line input
-	fmt.Print("Enter 1 for coarse grain, 2 for lock free and 3 for lazy locking: ")
-	var inputstr string
-	_, err := fmt.Scanf("%s", &inputstr)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	input, e := strconv.Atoi(inputstr)
-	if e != nil {
-		fmt.Println(e)
-		os.Exit(1)
-	}
+
+	var listTypeStr = flag.String("type", "CG", "Type of list")
+	flag.Parse()
+
+	var listType = Lists.ParseType(*listTypeStr)
+
 	hMap := new(Lists.HashMap)
-	hMap.Init(numBuckets, input)
+	hMap.Init(numBuckets, listType)
 
 	//fmt.Println("Running tests...")
 	//Lists.Runtests(list)
@@ -112,8 +104,9 @@ func main() {
 
 	elapsedSeq := time.Since(startSeq)
 	fmt.Printf("IGNORE: this output is to satisfy go%d\n\n\n", trash)
-	fmt.Printf("Finished testing %d threads with %d iterations per thread:\n", numthreads, itersperthread)
-	fmt.Printf("Concurrent Hash map tooK: %s\n", elapsedConc)
+	fmt.Printf("Finished testing %d threads with %d iterations per thread:\n",
+		numthreads, itersperthread)
+	fmt.Printf("Concurrent Hash map (%s) took: %s\n", *listTypeStr, elapsedConc)
 	fmt.Printf("Go's sequential hash map took: %s\n", elapsedSeq)
 
 }

@@ -84,11 +84,7 @@ func (l *LFList) Printlist() {
 //Helper func for LFList
 //Returns node either == to key, or just > than (hash)
 //Also sets left_node to be just to the left of returned
-func (l *LFList) search(key interface{}, left_node **NodeLF) *NodeLF {
-	var keyHash uint64
-	hash32, _ := getHash(key)
-	keyHash = uint64(hash32)
-
+func (l *LFList) searchWithHash(key interface{}, keyHash uint64, left_node **NodeLF) *NodeLF {
 	var left_node_next *NodeLF
 	var right_node *NodeLF
 
@@ -139,13 +135,17 @@ search_again:
 		}
 	}
 }
+func (l *LFList) search(key interface{}, left_node **NodeLF) *NodeLF {
+	hash, _ := getHash(key)
+	return l.searchWithHash(key, hash, left_node)
+}
 
 func (l *LFList) Insert(key interface{}, val interface{}) bool {
 	new_node := make_nodeLF(key, val, nil)
 	var right_node *NodeLF
 	var left_node *NodeLF
 	for {
-		right_node = l.search(key, &left_node)
+		right_node = l.searchWithHash(key, new_node.hash, &left_node)
 		if (right_node != l.tail) && (right_node.key == key) { //Update val
 			//TODO:Use atomic ops here!
 			//valptr := &(right_node.val)

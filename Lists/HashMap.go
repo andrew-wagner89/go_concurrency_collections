@@ -10,18 +10,41 @@ type HashMap struct {
 	numBuckets uint64
 }
 
-func (hm *HashMap) Init(numBuckets int, listType int) {
+type ListType int
+
+const (
+	CGListType = iota
+	LFListType
+	LLListType
+)
+
+func ParseType(str string) ListType {
+	switch str {
+	case "CG":
+		return CGListType
+	case "LF":
+		return LFListType
+	case "LL":
+		return LLListType
+	default:
+		fmt.Printf("Must supply list type: either CG, LF, or LL\n")
+		os.Exit(1)
+		return CGListType
+	}
+}
+
+func (hm *HashMap) Init(numBuckets int, listType ListType) {
 	hm.numBuckets = uint64(numBuckets)
 
 	hm.buckets = make([]List, numBuckets)
 
 	for i := 0; i < numBuckets; i++ {
 		switch listType {
-		case 1:
+		case CGListType:
 			hm.buckets[i] = new(CGList)
-		case 2:
+		case LFListType:
 			hm.buckets[i] = new(LFList)
-		case 3:
+		case LLListType:
 			hm.buckets[i] = new(LazyList)
 		default:
 			fmt.Printf("improper hashmap type detected\n")
