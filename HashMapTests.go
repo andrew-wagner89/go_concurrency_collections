@@ -15,6 +15,8 @@ var itersperthread = 1024 * 64
 var maxkeyval = 4096
 var numBuckets = 12
 
+
+//test function for the map, each thread will run this
 func testMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup) {
 	fmt.Printf("Testing with thread %d\n", seed)
 	rand.Seed((int64)(seed))
