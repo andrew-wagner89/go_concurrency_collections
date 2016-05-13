@@ -130,7 +130,6 @@ search_again:
 		if atomic.CompareAndSwapPointer(
 			(*unsafe.Pointer)(unsafe.Pointer(&(*left_node).next)),
 			unsafe.Pointer(left_node_next),
-			//Segfault?
 			unsafe.Pointer(right_node)) {
 			if (right_node != l.tail) && isMarked(right_node.next) {
 				goto search_again //Should delete right node
@@ -149,6 +148,18 @@ func (l *LFList) Insert(key interface{}, val interface{}) bool {
 		right_node = l.search(key, &left_node)
 		if (right_node != l.tail) && (right_node.key == key) { //Update val
 			//TODO:Use atomic ops here!
+			//valptr := &(right_node.val)
+			//oldvalptr, _ := (right_node.val).(unsafe.Pointer)
+			//newvalptr, _ := val.(unsafe.Pointer)
+			//if atomic.CompareAndSwapPointer(
+			//(*unsafe.Pointer)(unsafe.Pointer(&(right_node.val))),
+			//unsafe.Pointer(),
+			//unsafe.Pointer(newvalptr)) {
+			//return false
+			//} else {
+			//fmt.Println("Failed")
+			//continue //Try CAS again
+			//}
 			right_node.val = val
 			return false
 		}

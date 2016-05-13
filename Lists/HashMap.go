@@ -6,14 +6,12 @@ import (
 )
 
 type HashMap struct {
-	buckets      []List
-	numBuckets   int
-	numPerBucket uint64
+	buckets    []List
+	numBuckets uint64
 }
 
 func (hm *HashMap) Init(numBuckets int, listType int) {
-	hm.numBuckets = numBuckets
-	hm.numPerBucket = MAX_UINT64 / uint64(numBuckets)
+	hm.numBuckets = uint64(numBuckets)
 
 	hm.buckets = make([]List, numBuckets)
 
@@ -39,7 +37,7 @@ func (hm *HashMap) Get(key interface{}) (interface{}, bool) {
 	hash32, _ := getHash(key)
 	keyHash = uint64(hash32)
 
-	bucketId := keyHash / hm.numPerBucket
+	bucketId := keyHash % hm.numBuckets
 
 	return hm.buckets[bucketId].Get(key)
 }
@@ -49,7 +47,7 @@ func (hm *HashMap) Remove(key interface{}) bool {
 	hash32, _ := getHash(key)
 	keyHash = uint64(hash32)
 
-	bucketId := keyHash / hm.numPerBucket
+	bucketId := keyHash % hm.numBuckets
 
 	return hm.buckets[bucketId].Remove(key)
 }
@@ -59,13 +57,13 @@ func (hm *HashMap) Insert(key interface{}, val interface{}) bool {
 	hash32, _ := getHash(key)
 	keyHash = uint64(hash32)
 
-	bucketId := keyHash / hm.numPerBucket
+	bucketId := keyHash % hm.numBuckets
 
 	return hm.buckets[bucketId].Insert(key, val)
 }
 
 func (hm *HashMap) PrintMap() {
-	for i := 0; i < hm.numBuckets; i++ {
+	for i := 0; i < int(hm.numBuckets); i++ {
 		hm.buckets[i].Printlist()
 	}
 }

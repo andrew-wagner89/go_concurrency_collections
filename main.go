@@ -35,9 +35,28 @@ func testList(list Lists.List, seed int, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
+func testHash() {
+	rand.Seed((int64)(0))
+	start := time.Now()
+	var key int
+	var hash uint64
+	for i := 0; i < itersperthread; i++ {
+		key = rand.Intn(maxkeyval)
+		hash, _ = Lists.GetHash(key)
+		_ = hash % numBuckets
+		//fmt.Printf("Hash of %d is %d\n", key, hash)
+	}
+	elapsed := time.Since(start)
+	fmt.Printf("Computing %d hashes took %s\n", itersperthread, elapsed)
+
+}
+
 func main() {
 	//take in input to see which list to use
 	//TODO: change to command line input
+
+	testHash()
+
 	fmt.Print("Enter 1 for coarse grain, 2 for lock free and 3 for lazy locking: ")
 	var inputstr string
 	_, err := fmt.Scanf("%s", &inputstr)
