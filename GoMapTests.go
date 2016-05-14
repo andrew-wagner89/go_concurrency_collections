@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-var numthreads = 16
-var itersperthread = 1024 * 64
-var maxkeyval = 4096
+var numthreads = 8
+var itersperthread = 1024 * 128
 var numBuckets = 4
+var maxkeyval = 4096 * numBuckets
 
 func testHash() {
 	rand.Seed((int64)(0))
