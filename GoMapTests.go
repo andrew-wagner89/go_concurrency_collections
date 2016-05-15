@@ -50,7 +50,26 @@ func testHashMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup) {
 	}
 	wg.Done()
 }
+func testGoRWMap(hMap *Lists.GoMapRW, seed int, wg *sync.WaitGroup) {
+	rand.Seed((int64)(seed))
+	var method int
+	var key int
+	var val int
+	for i := 0; i < itersperthread; i++ {
+		key = rand.Intn(maxkeyval)
+		val = rand.Intn(maxkeyval)
+		method = rand.Intn(3)
 
+		if method == 0 {
+			hMap.Insert(key, val)
+		} else if method == 1 {
+			hMap.Remove(key)
+		} else {
+			hMap.Get(key)
+		}
+	}
+	wg.Done()
+}
 func main() {
 	testHash()
 
@@ -99,9 +118,24 @@ func main() {
 	}
 
 	elapsedSeq := time.Since(startSeq)
+
+	var wg2 sync.WaitGroup
+	wg2.Add(numthreads)
+
+	RWGoMap := new(Lists.GoMapRW)
+	RWGoMap.Init()
+
+	startGoConc := time.Now()
+	for i := 0; i < numthreads; i++ {
+		go testGoRWMap(RWGoMap, i, &wg2)
+	}
+	wg2.Wait()
+	elapsedGoConc := time.Since(startGoConc)
+
 	fmt.Printf("Finished testing %d threads with %d iterations per thread:\n",
 		numthreads, itersperthread)
 	fmt.Printf("Concurrent Hash map (%s) took: %s\n", *listTypeStr, elapsedConc)
 	fmt.Printf("Go's sequential hash map took: %s\n", elapsedSeq)
+	fmt.Printf("Go's hash map parrallelized with a RW lock took: %s\n", elapsedGoConc)
 
 }
