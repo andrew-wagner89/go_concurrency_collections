@@ -10,11 +10,10 @@ import (
 	"time"
 )
 
-var numthreads = 8
+var numthreads = 1
 var itersperthread = 1024 * 64
 var maxkeyval = 4096
 var numBuckets = 12
-
 
 //test function for the map, each thread will run this
 func testMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup) {

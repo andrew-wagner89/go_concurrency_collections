@@ -13,7 +13,7 @@ type NodeLL struct {
 	val    interface{}
 	next   *NodeLL
 	marked bool //marks whether the node is removed from the list
-	hash uint64
+	hash   uint64
 	lock   *sync.Mutex //locks individual nodes
 }
 
@@ -23,7 +23,7 @@ type LazyList struct {
 }
 
 //node constructor
-func make_nodeLL(key interface{},val interface{}, next *NodeLL) *NodeLL {
+func make_nodeLL(key interface{}, val interface{}, next *NodeLL) *NodeLL {
 	n := new(NodeLL)
 	n.key = key
 	n.val = val
@@ -38,7 +38,7 @@ func make_nodeLL(key interface{},val interface{}, next *NodeLL) *NodeLL {
 //initializes the list
 func (l *LazyList) Init() {
 	//sentinel key and val don't matter, just the hash value
-	l.tail = make_nodeLL(0, nil, nil) 
+	l.tail = make_nodeLL(0, nil, nil)
 	l.head = make_nodeLL(0, nil, l.tail)
 	l.head.hash = MIN_UINT64 //head has minimum hash
 	l.tail.hash = MAX_UINT64 //tail has maximum hash
@@ -84,14 +84,14 @@ func (l *LazyList) Insert(key interface{}, val interface{}) bool {
 		curr.lock.Lock()
 
 		if validate(pred, curr) { //make sure pred and curr are still valid
-			if curr.hash == keyHash { 
+			if curr.hash == keyHash {
 				updated := false
 				//handle hash collisions by checking all nodes with the search hash until the correct key is found
-				for curr.hash == keyHash { 
+				for curr.hash == keyHash {
 					if curr.hash == keyHash && curr.key == key { //if the key is already in the list, update the val
-							curr.val = val
-							updated = true
-							break
+						curr.val = val
+						updated = true
+						break
 					}
 					//if the current node is not the correct node, look at the next node
 					pred.lock.Unlock()
@@ -105,7 +105,7 @@ func (l *LazyList) Insert(key interface{}, val interface{}) bool {
 					pred.next = new_node
 				}
 			} else { //if the current hash is not equal to the hash of the key, make a new node
-				new_node := make_nodeLL(key, val, curr) 
+				new_node := make_nodeLL(key, val, curr)
 				pred.next = new_node
 			}
 
@@ -170,12 +170,11 @@ func (l *LazyList) Remove(key interface{}) bool {
 		pred.lock.Lock()
 		curr.lock.Lock()
 
-
 		restart := false //restart holds whether an invalid node pair was found
-		if curr.hash == keyHash{
+		if curr.hash == keyHash {
 			for curr.hash == keyHash { //loop through all nodes with the correct hash
 				if validate(pred, curr) {
-					if curr.key == key{ //if the key is in the list remove it and return true
+					if curr.key == key { //if the key is in the list remove it and return true
 						curr.marked = true
 						pred.next = curr.next
 						pred.lock.Unlock()
@@ -187,7 +186,7 @@ func (l *LazyList) Remove(key interface{}) bool {
 						curr = curr.next
 						curr.lock.Lock()
 					}
-				} else{ //validate failed, stop the remove process
+				} else { //validate failed, stop the remove process
 					restart = true
 					break
 				}
@@ -196,7 +195,7 @@ func (l *LazyList) Remove(key interface{}) bool {
 			curr.lock.Unlock()
 
 			//if a validate didn't work, restart the remove process
-			if restart {	
+			if restart {
 				continue
 			} else { //otherwise the hash is in the list, but the key isn't, return false
 				return false

@@ -7,7 +7,6 @@ import (
 )
 
 //Class LFList
-//Constructor: NewLFList()
 
 func isMarked(ptr *NodeLF) bool {
 	addr := (uintptr)(unsafe.Pointer(ptr))
@@ -95,7 +94,8 @@ search_again:
 
 		/* 1: Find left_node and right_node */
 	inner:
-		for ok := true; ok; ok = (isMarked(t_next) || (t.hash <= keyHash)) {
+		//for ok := true; ok; ok = (isMarked(t_next) || (t.hash <= keyHash)) {
+		for {
 			if !isMarked(t_next) { //Not marked for deletion
 				(*left_node) = t
 				left_node_next = t_next
@@ -106,9 +106,14 @@ search_again:
 			}
 			t_next = t.next
 
-			//Check key equality
-			if t.hash == keyHash && t.key == key {
-				break inner
+			//For loop condition
+			if isMarked(t_next) || (t.hash <= keyHash) {
+				//Check key equality
+				if t.hash == keyHash && t.key == key && !isMarked(t_next) {
+					break inner
+				}
+			} else {
+				break
 			}
 		}
 		right_node = t
@@ -116,6 +121,7 @@ search_again:
 		/* 2: Check nodes are adjacent */
 		if left_node_next == right_node {
 			if (right_node != l.tail) && isMarked(right_node.next) {
+				//fmt.Println("Marked node")
 				goto search_again //Marked for deletion, try again
 			} else {
 				return right_node //Success
@@ -143,19 +149,6 @@ func (l *LFList) Insert(key interface{}, val interface{}) bool {
 	for {
 		right_node = l.search(key, new_node.hash, &left_node)
 		if (right_node != l.tail) && (right_node.key == key) { //Update val
-			//TODO:Use atomic ops here!
-			//valptr := &(right_node.val)
-			//oldvalptr, _ := (right_node.val).(unsafe.Pointer)
-			//newvalptr, _ := val.(unsafe.Pointer)
-			//if atomic.CompareAndSwapPointer(
-			//(*unsafe.Pointer)(unsafe.Pointer(&(right_node.val))),
-			//unsafe.Pointer(),
-			//unsafe.Pointer(newvalptr)) {
-			//return false
-			//} else {
-			//fmt.Println("Failed")
-			//continue //Try CAS again
-			//}
 			right_node.val = val
 			return false
 		}
@@ -175,7 +168,7 @@ func (l *LFList) Get(key interface{}) (interface{}, bool) {
 	hash, _ := getHash(key)
 	right_node = l.search(key, hash, &left_node)
 	if (right_node == l.tail) || (right_node.key != key) {
-		return right_node.val, false
+		return nil, false
 	} else {
 		return right_node.val, true
 	}

@@ -1,0 +1,336 @@
+The author macro works with any number of authors. There are two commands
+used to separate the names and addresses of multiple authors: And and AND.
+
+Using And between authors leaves it to LaTeX to determine where to break
+the lines. Using AND forces a linebreak at that point. So, if LaTeX
+puts 3 of 4 authors names on the first line, and the last on the second
+line, try using AND instead of And before the third author name.
+
+    Currently, usage of social networks such as Facebook, Flickr, \& Snapchat
+    have the potential to cause significant privacy leaks. If a private photo
+    is accidentally shared online, it will likely be impossible to remove,
+    due to the rapid sharing of content that occurs in our digital society. 
+    However, an intelligently designed social network application could detect 
+    the privacy level in a photo, and stop it from ever reaching the internet. 
+    In this project, I create PrivacyNet, a Convolutional Neural Network based 
+    off CaffeNet, and port the algorithm to run locally on an Android smartphone. 
+    The purpose of PrivacyNet is to classify an image as  or 
+    . This application serves as a demonstration that popular 
+    social networking sites could employ similar techniques to help ensure the 
+    users of their service do not suffer any privacy leaks.
+
+Nowadays, photo sharing on social media is ubiquitous. However, it seems 
+that policy may be lagging behind innovation. Although social media sites such
+as Facebook allow users to choose their privacy settings, many users stick with 
+the default settings and end up sharing private photos with many people. The
+study done by Liu et al. [8] showed a large discrepancy between suggested sharing
+levels (generated with Amazon Mechanical Turk) and the actual privacy setting of
+a photo.
+
+Recent studies done on users of social media sites show similar results. A study 
+by Wang et al. [11] showed that 23\% of Facebook users regret making a post
+(images, text, etc). Additionally, a study by Zerr et al. [2] showed that over 
+80\% of photos shared by teenagers on Facebook were not approved by their parents 
+and teachers. Although the users themselves were not queried, the opinions
+of parents and teachers helps provide light to the problem.
+
+With the issue identified, we must try to find a viable solution. 
+Specifically, the problem I set out to solve, was {how can we automatically
+detect a pricavy leak before it happens, in the context of image sharing on 
+social media sites}. Such detection could help a service prevent a privacy 
+leak by either confirming this is what the user wants to do, or disallowing 
+the task completely. The brain of this solution will be a Convolutional
+Neural Network (CNN), named , that can perform this detection. 
+CNNs are chosen for this task due to their recent dominance in the field of image 
+classification [3]. These networks use convolutional layers and learned parameters
+to produce a high-level feature-map of the input image. Then, classification is 
+achieved through the use of fully-connected layers, also using learned parameters. 
+Learning will be performed using the data set from Zerr et al. [2]. This 
+architecture is based off of previously succesful CNN classifiers [3], and the 
+work done by Tran et al. [1] of adapting CNN's to privacy detection.
+
+PrivacyNet achieved good perofrmance with an accuracy of 87\% on the test set. This is
+very comparable to Tran et al. [1]'s PCNN, which employs a similar architecture. Due
+to lack of data, Tran et al. [1]'s more succesful network, PCNH, could not be 
+replicated.
+
+However, just training a classifier to detect a private photo is not enough. Most use 
+of social media (especially uploading photos) happens on one's smartphone. If the work
+from Tran et al. [1] were to be used in this case, the smartphone would have to send the
+image to a server that would respond with the classification decision. However, sending
+a private image to a server is just the task we set out to prevent because we cannot 
+trust that the server will destroy the image. In this paper, I will fix this problem 
+by implimenting the classifier locally on a smartphone, so a private photo does not 
+leave the smartphone until the classification decision is reported.
+
+Photo privacy is a recently emerged field, and many groups have taken different
+approaches to solving the problem. Many of the first works used low-level image features
+such as color histograms, bag of visual words [6] and face detectors along with an 
+SVM classifier for privacy detection [7]. Additionally, Liu et al. [8] used Amazon 
+Mechanical Turk to label facebook images suggested sharing level: only me, some friends,
+all friends, friends of friends, and everyone. They then compared these results with 
+ground truth, finding a large discrepancy: many photos are being overshared.
+
+More recently, Zerr et al. [2] designed a game for groups of people to label 
+images as public, private, or undecidable. The group told players to label an 
+image as private if it ``has to do with the private sphere or contain objects 
+that one would not share with the entire world'' [2]. This mostly composed of self
+portraits, pictures of family, friends, one's home, weddings, holidays, and private 
+parties. All other images were to be marked as public, unless the player could not 
+decide, in which case it would be marked undecidable. Zerr et al. [2] continued on 
+to use an SVM with low-level image features to classify the image. They 
+achieved mediocre performance.
+
+In 2016, Tran et al. [1] tried their hand at improving upon the work by Zerr et
+al. [2]. These authors realized that the recent emergence of Convolutional Neural 
+Netowrks (CNNs) for image classification [3] could be applied to this problem.
+They created three CNN architectures: PCNN, PONN, and PCNH. PCNN is based off
+of Krizhevsky et al. [3], with some changes to be more suited to privacy detection. 
+PONN is similar to PCNN, but instead of detecting privacy, detects 204 object classes
+from the ImageNet LSVRC and 4 additional classes with data gathered by Tran et al. [1].
+These classes were deemed to be related to privacy. Lastly, PCNH combines these two 
+networks into one single CNN that uses 3 fully-connected layers to combine the information
+from the two networks. Additionally, they augmented the data from Zerr et al. [2]
+with more data from Flickr. Sadly, this additional data has not been made public. 
+They discovered that PCNH performs very well, achieving 95\% accuracy on the 
+Zerr et al. [2] dataset. Tran et al. [1] used CNNs as feature extracters, 
+not end-to-end classifiers. An SVM was used to make the final decision.
+
+The dataset is an integral part of a classifier because it effectively 
+defines the classes. First, the Zerr et al. [2] data (a compressed csv file) 
+had to be downloaded from the PicAlert website. 
+The columns in the file correspond to a flickr photoID, a userID (of the 
+PicAlert game), a team (of the PicAlert game), and the assosciated privacy 
+value assigned (public,private,undecidable).  Therefore, the dataset 
+contains the  from the game, not the calculated ground 
+truths.
+
+Next, all photos annoted by less than two different people were removed. This 
+insured that the ground truths had mutliple people voting on it, improving 
+accuracy, and reducing the size to 37,535 images. Then, the ground 
+truths were calculated in the following manner: an image was marked ``private''
+if  judges on that photo decided the image was private. An image was marked
+``public'' if 75\% or more of of the judges marked the image as public. The 
+next step was to download all of the public and private photos (the undecidable 
+ones [6,104 images] were not included in the dataset). This was done using the 
+Flickr python API.
+It is important to note that because the dataset is over three years old at the time
+of this paper, some of the images have been romved for various reasons. About 
+6,500 images of the 31,431 public/private images have been removed. This removal 
+has slightly changed the ratio of public to private photos. This will adversely effect 
+the results because there will be less data for the CNN to learn from.\\
+
+Now that the images have been saved locally, they must all be converted to the same 
+size, a size the neural network can recieve. To standardize all images, the center 
+square crop of the image was taken and reshaped to 256x256. During training, 10 
+crops of size 227x227 (Section ) will be used to artificially 
+increase the data size. During testing (Section ), one randrom crop 
+of the same size will be used.
+
+
+    Nubmer of images per class in the dataset at various stages of preparation
+
+It is important to note that these proportions (public/private) for a binary classifier
+are not a good choice. With one class much more likely to occur than another in the 
+data set, it is probable that the classifier will not generalize well, because the model
+will learn about the probability distribituion, not what truly differentiates a public 
+image from a private one. To mitigate this, 3,469 public images were randomly selected 
+and used in the final dataset. Although this decreases the dataset size, it is likely 
+to improve performance. This is also the procedure taken in [1] and [2]. Now that 
+the dataset is `equalized', the final dataset is split into two disjoint sets:
+the training set and the test set. The training set will compose of the data that
+the CNN will learn from, while the test set will be used to determine its performance.
+An 80/20 split was chosen for train/test because it falls inbetween the splits chosen
+by [1] and [2]. A discussion on the contents of the data set can be found in Section 
+~ The last step is to convert the two datasets into a format that Caffe 
+can understand, LMDB. This was done with included tools in the Caffe [5] framework.
+
+The CNN was trained using Caffe [5] and the pretrained network CaffeNet, based
+off of the work done by Krizhevsky et al. [3]. CaffeNet was trained on the
+ImageNet dataset for classification. Due to the nature of CNN's and the ImageNet
+dataset, much of what the network has already learned can be reused in different 
+applications, a process called {transfer learning}. In this case, the pretrained 
+CaffeNet model will be used with some of the last fully-connected layers removed, 
+replacing them with new fully-connected layers that will learn to classify the 
+Zerr et al. [2] dataset.
+
+The hyperparemeters were chosen based off a small series of tests and a comparison
+of performance. The settled upon solver was CaffeNet with the last two fully-connected
+layers (fc7 & fc8) replaced with newly initialized layers. These were the only layers 
+in which the weights were updated; the rest of the layers had fixed weights \& filters. 
+Then, a learning rate of 1e-4 was used and every 10,000 iterations, this was decreased 
+by a factor of 10. A very small batch size of 16 was used due to limitations from the 
+computer being used (See footnote in Section~). This network was 
+trained for 100,000 iterations, at which point the learning had effectively stopped.
+
+To evaluate the performance of PrivacyNet, a python script was created to iterate
+through the entire test set and calculate precision, recall, F1 score, accuracy, 
+and a confusion matrix. Precision is TP/(TP+FP) and measures how useful the classifier 
+output is, while recall measures how complete the predictions are and is given by TP/(TP+FN). 
+The F1 score is a way of combining (harmonic mean) precision and recall into one metric.
+Accuracy measures how often the classifier was correct. Lastly, the confusion matrix 
+shows a breakdown of correct and incorrect classifications for all classes.  These 
+results are shown in Table~ and Table~.
+
+A comparison of PrivacyNet's results with those presented in [1] and [2] can be found in 
+Table~. Here it is evident that PrivacyNet performed comparably to 
+the PCNN+TL network from [1], as predicted. PrivacyNet outperforms all other networks, 
+except PCNH+TL, which used two networks and additional data to classify, so it is an unfair
+comparison for PrivacyNet, a slightly simpler architecture. If the additional data were 
+available, it would be simple to extend PrivacyNet to achieve similar performance to PCNH+TL. 
+Comparing PrivacyNet to PCNN+TL, the variance between the two is not statistically significant.
+This makes sense because the networks employ a similar architecture. However, PCNN uses an 
+SVM at its last stage in classification instead of a fully-connected layer, as is used in 
+PrivacyNet. I predict that for this reason, PrivacyNet may generalize slightly better due to its 
+end-to-end learning scheme. Addtionally, it is important to note that the slightly smaller 
+data set and the limitations of batch size on the computer negatively affected the performance 
+of PrivacyNet.
+
+
+The next step in this project was to port PrivacyNet to an Android application 
+such that the classifier could run locally on a user's phone to determine if an 
+image is public or private. Luckily, there was an example open source Android 
+applciation that implimented an example Caffe network as an Android Application.
+To get the application 
+working, first a version of Caffe had to be compiled that could run on an Android 
+phone. Then, the demo project was modified so it would use PrivacyNet, not the 
+demo network. This involved transferring the learned parameters and architecture 
+over to the mobile phone, and changing the dictionary of class labels out for a 
+new one. Additionally, the demo applciation had a bug where the app would often 
+crash occassionally after context was switched from the Camera bach to the app. 
+This was fixed by saving and retrieving instance variables. Screenshots of the 
+final application can be seen in Table~. Note that the phone is in 
+Airplane mode with Wi-Fi off, demonstrating that the network is run locally.
+        
+This project serves as proof that social networking companies such as Facebook, Snapchat,
+and Flickr could add functionality to their mobile applications that would prevent a user 
+from accidentally publically sharing a private photo. The performance demonstrated by 
+PrivacyNet is adequate, especially when compared to the current industry standard: nothing.
+Leveraging more complicated architectures such as PCNH [1] combined with deeper 
+architectures such as VGG-16/19 [4] would likely result in a mobile CNN that could better 
+determine the privacy level of a user's photo. Additionally, a larger dataset would improve
+results. 
+
+However, this solution is not perfect. Implimenting the Caffe framework on a mobile phone
+takes a fair amount of space, due to the complexity involved in the framework. However, 
+the entire framework is not needed for these relatively simple CNN's. Perhaps a fix to this 
+problem would be to compile a variant of Caffe that would have a smaller physical footprint, 
+only implimenting the bare functionality required. Additionally, multiple social networking 
+sites could use the same compiled Caffe version, reducing the footprint per application. 
+However, the weights assosciated with each network have an additional footprint of hundreds 
+of MB. This footprint could likely be reduced by compressing the weights, with the expense of 
+more compute time and perhaps worse performance if a lossy compression is used. This brings 
+us to the last issue: time. A single image classification takes a couple seconds, so it is 
+sufficient for classifying one image at a time, but may be too slow for multiple images in a 
+row. This could be solved by writing CUDA code that could leverage the GPU's on mobile devices,
+but this is no trivial task. The question really then becomes: is a user willing to sacrifice
+storage and time for a more secure social network. Perhaps this feature would then best
+be served a an opt-in feaure, such that only those who consider it important enought would
+take the trade-off.
+
+
+Photo privacy detection is a problem that isn't going to go away tomorrow. Here I have 
+presented a viable solution in which social media platforms could detect a photo as 
+public before it is released to the Internet, all locally on a mobile phone. However, 
+this solution is not without its shortcomings. Firstly, the performance of PrivacyNet 
+is not optimal. Tran et al. [1] showed that using object classifiers as input to a 
+classifier improves performance. There are also disadvantages of storage and time,
+addressed in Section~. Incorporating an architecture more similar 
+to PCNH would certainly provide better performance. Another improvement would be 
+incorporating deeper CNN architectures, such as VGG-16/19 [4]. These networks have 
+shown to be better at object classification, so it is likely they would also perform 
+better at privacy detection. Due to the limitations of the computer in which tests
+were performed on, this architecture could not be evaluated. Additionally, a larger data set could significantly
+improve performance. Many problems in machine learning can be solved by throwing
+more data at an algorithm.
+
+Another potential improvement would be to use a more domain specific loss function.
+The default loss function (Softmax with loss), treats an incorrect public or
+private classification the same. However, in this task, it is worse to 
+misclassify a private image. A loss function that updates the paramters 
+more in the case of a private photo being classified as public, could lead
+to better performance. Specifically, this would improve the Privacy recall
+listed in Table~.
+
+Although performance will likely improve by increasing the size of the dataset,
+PrivacyNet may need  to the problem at hand. I suggest that 
+a data set that gives the  of an image, instead of only declaring 
+an image as public or private, would yield better results. The CNN would be trained 
+to output a real value between [0,1]. This would be the models predction for how 
+private the image is, not a classification prediction. A privacy level output would 
+serve as an improvement during training and when implimented. This change would help 
+during training because the algorithm could learn images as lying between the two 
+extremes of the spectrum: private and public, as the images are in the real world. 
+In private image datasets [2], many images marked as public may not be agreed upon 
+by all people. A real value metric could help combine conflicting votes mith a simple 
+mean or median. Additionally, after the regression based CNN is implimented, a user 
+could choose what level of privacy they would like to threshold uploads at. Someone 
+who is very concerned about publicly releasing a private photo may choose a low 
+threshold, whereas someone less concerned would choose a high threshold, only 
+notifying them when an image is deemed very private.
+
+Lastly, since CNN's have beaten the competition in image classification,
+they have recently been applied to image detection/localization, where
+the task is to find  objects are in an image. This
+task could be transferred to private image detection so that a CNN
+could tell where the privacy leak in an image is. The user could use
+this information to obfuscate this leakage, similar to the work done 
+by Poller et al. [10]. Alternatively, this same content could be encrypted,
+following the work from He et al. [9]. As mentioned before, future work in 
+this area is likely to require additional, more domain specific, larger 
+data sets.
+
+
+[1] Tran, L. et al. (2016) Privacy-CNH: A Framework to Detect Photo
+Privacy with Convolutional Neural Networks using Hierarchical Features
+{\it Assosciation for the Advancement Artificial Intelligence Confernece
+2016}
+
+[2] Zerr, S. et al. (2012) Privacy-aware image classification and
+search. In {\it Proceedings of the 35th International ACM SIGIR 
+Conference on Research and Development in Information Retrieval },
+SIGIR'12 35-44. New York,NY,USA:ACM
+
+[3] Krizhevsky, Alex, Ilya Sutskever, and Geoffrey E. Hinton. 2012
+Imagenet classification with deep convolutional neural networks.
+{\it Advances in neural information processing systems}.
+
+[4] Simonyan, K., \& Zisserman, A. (2014). Very deep convolutional 
+networks for large-scale image recognition. {\it arXiv preprint 
+arXiv:1409.1556}. Chicago	
+
+[5] Jia, Yangqing, et al. (2014) Caffe: Convolutional architecture 
+for fast feature embedding. {\it Proceedings of the ACM International 
+Conference on Multimedia}. ACM
+
+[6] Yang, J. et al. (2007) Evaluating bag-of-visual-words representations
+in scene classification. {\it In Proceedings of the International
+Workshop on Workshop on Multimedia Information
+Retrieval}, MIR ’07, 197–206. New York, NY, USA: ACM.
+
+[7] Burges, C. J. C. (1998) A tutorial on support vector machines
+for pattern recognition. {\it Data Min. Knowl. Discov.} 2(2):121–
+167.
+
+[8] Liu, Y.; Gummadi, K. P.; Krishnamurthy, B.; and Mislove,
+A. (2011) Analyzing facebook privacy settings: User expectations
+vs. reality. {\it In Proceedings of the 2011 ACM SIGCOMM
+Conference on Internet Measurement Conference,
+IMC ’11}, 61–70. New York, NY, USA: ACM.
+
+[9] He, J., Liu, B., Kong, D., Bao, X., Wang, N., Jin, H., \& 
+Kesidis, G. (2014). PuPPIeS: Transformation-Supported Personalized 
+Privacy Preserving Partial Image Sharing.
+
+[10] Poller, A., Steinebach, M., \& Liu, H. (2012). Robust 
+image obfuscation for privacy protection in web 2.0 applications. 
+{\it In IS\&T/SPIE Electronic Imaging (pp. 830304-830304)}. 
+International Society for Optics and Photonics.
+
+[11] Wang, Y.; Norcie, G.; Komanduri, S.; Acquisti, A.; Leon,
+P. G.; and Cranor, L. F. (2011) I regretted the minute I
+pressed share: A qualitative study of regrets on facebook.
+{\it In Proceedings of the Seventh Symposium on Usable Privacy
+and Security, SOUPS ’11}, 10:1–10:16. New York, NY,
+USA: ACM.
+}

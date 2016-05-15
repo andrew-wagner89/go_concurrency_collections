@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-var numthreads = 8
-var itersperthread = 1024 * 16
-var numBuckets = 2
-var maxkeyval = 4096 * numBuckets
+var numthreads = 2
+var itersperthread = 1024 * 32
+var numBuckets = 1
+var maxkeyval = 2
 
 func testHash() {
 	rand.Seed((int64)(0))
@@ -81,6 +81,8 @@ func main() {
 	hMap := new(Lists.HashMap)
 	hMap.Init(numBuckets, listType)
 
+	//list := new(Lists.LFList)
+	//list.Init()
 	//fmt.Println("Running tests...")
 	//Lists.Runtests(list)
 	//fmt.Println("Tests complete\n")
