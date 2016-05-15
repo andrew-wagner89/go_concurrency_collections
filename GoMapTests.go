@@ -10,8 +10,8 @@ import (
 )
 
 var numthreads = 8
-var itersperthread = 1024 * 128
-var numBuckets = 4
+var itersperthread = 1024 * 16
+var numBuckets = 2
 var maxkeyval = 4096 * numBuckets
 
 func testHash() {
