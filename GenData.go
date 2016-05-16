@@ -62,7 +62,7 @@ func genDataItersConst() {
 			fmt.Fprintf(os.Stderr, "LF done in %f\n", lfS)
 			llS := oneTest(threads, iters, Lists.LLListType, numBuckets)
 			fmt.Fprintf(os.Stderr, "LL done in %f\n", llS)
-			fmt.Printf("%d %d %f %f %f\n", threads, iters, cgS, lfS, llS)
+			fmt.Printf("%d %d %f %f %f\n", numBuckets, threads, cgS, lfS, llS)
 		}
 		fmt.Println()
 	}

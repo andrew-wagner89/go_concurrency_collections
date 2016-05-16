@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var numbuckets = 1024
+var numbuckets = 2 * 1024
 var numthreads = 32
 
 //Taken from https://stackoverflow.com/questions/5884154/golang-read-text-file-into-string-array-and-write
@@ -151,7 +151,7 @@ func dosection(hmap *Lists.HashMap, chosensection *section, lines []string) {
 	for i := chosensection.startln; i < chosensection.endln; i++ {
 		words := strings.Fields(lines[i])
 		for _, word := range words {
-			word = strings.ToLower(strings.Trim(word, ".,;*'`\":?!\\ {}()/"))
+			word = strings.ToLower(strings.Trim(word, ".,;*'`\":?!\\[] {}()/"))
 			//fmt.Println(word)
 			val, there := hmap.Get(word)
 			if there == false {
@@ -177,7 +177,7 @@ func main() {
 	var listTypeStr = flag.String("file", "texts/OriginOfSpecies.txt", "Which file to perform wc on")
 	flag.Parse()
 
-	lines, err := readLines(listTypeStr)
+	lines, err := readLines(*listTypeStr)
 	if err != nil {
 		fmt.Println("Error reading file!")
 		os.Exit(1)
@@ -188,13 +188,20 @@ func main() {
 	paralleltime := wcParallel(lines, hMap, numthreads)
 	concurrenttime := wcConcurrent(lines)
 	keys, values := hMap.KeysAndValues()
+	maxkey := ""
+	maxval := (int32)(0)
 	v := values.Front()
 	for k := keys.Front(); k != nil; k = k.Next() {
 		s := k.Value.(string)
 		n := v.Value.(*int32)
+		if *n > maxval {
+			maxval = *n
+			maxkey = s
+		}
 		fmt.Printf("%s -> %d\n", s, *n)
 		v = v.Next()
 	}
+	fmt.Printf("Most often used word is '%s', used %d times\n", maxkey, maxval)
 
 	fmt.Printf("Parallel took: %s\nConcurrent took: %s\n", paralleltime, concurrenttime)
 }
