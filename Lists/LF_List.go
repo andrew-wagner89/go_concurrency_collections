@@ -20,9 +20,17 @@ func setMarked(ptr *NodeLF) *NodeLF {
 	return (*NodeLF)(newaddr)
 }
 func setUnmarked(ptr *NodeLF) *NodeLF {
+	var mask uintptr
+	if unsafe.Sizeof(ptr) == 8 { //64 bit machine
+		mask = (uintptr)(0xFFFFFFFFFFFFFFFE)
+	} else if unsafe.Sizeof(ptr) == 4 { //32 bit machine
+		mask = (uintptr)(0xFFFFFFFE)
+	} else {
+		fmt.Println("Error, not on 64 bit or 32 bit machine!!")
+	}
 	addr := (uintptr)(unsafe.Pointer(ptr))
 	//If on 32 bit machine, change this to be a 32 bit value
-	newaddr := unsafe.Pointer(addr & (uintptr)(0xFFFFFFFFFFFFFFFE))
+	newaddr := unsafe.Pointer(addr & mask)
 	return (*NodeLF)(newaddr)
 }
 func TestMarks() {

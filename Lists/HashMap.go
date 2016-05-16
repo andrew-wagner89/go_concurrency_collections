@@ -6,6 +6,11 @@ import (
 	"os"
 )
 
+/* HashMap uses the Hash function in Lists/HashFunc
+to produce a hash for a given key. This key,val pair
+is stored in a linked list of a given type (ListType).
+All further ops work on the hash value mod #buckets
+*/
 type HashMap struct {
 	buckets    []List
 	numBuckets uint64
@@ -19,6 +24,7 @@ const (
 	LLListType
 )
 
+/* Convert string of list type to concrete ListType */
 func ParseType(str string) ListType {
 	switch str {
 	case "CG":
@@ -56,7 +62,7 @@ func (hm *HashMap) Init(numBuckets int, listType ListType) {
 	}
 }
 
-/* Likely not mutli-thread safe */
+/* Likely not mutli-thread safe. However, will be called after synchronized state */
 func (hm *HashMap) KeysAndValues() (*list.List, *list.List) {
 	keys := list.New()
 	values := list.New()

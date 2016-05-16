@@ -34,6 +34,7 @@ func testHashMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup, iters int) {
 	wg.Done()
 }
 
+//Keep buckes constant, loop thru diff values of threads and iters
 func genDataBucketsConst() {
 	fmt.Println("#threads iterations seconds(CG) seconds(LF) seconds(LL)")
 	for _, threads := range threadsArr {
@@ -50,6 +51,8 @@ func genDataBucketsConst() {
 		fmt.Println()
 	}
 }
+
+//Keep iters constant, loop thru diff values of buckets and threads
 func genDataItersConst() {
 	iters := 1024 * 64
 	fmt.Println("#buckets threads seconds(CG) seconds(LF) seconds(LL)")
@@ -68,6 +71,7 @@ func genDataItersConst() {
 	}
 }
 
+//Run a single test given the parameters
 func oneTest(threads, iters int, listType Lists.ListType, numBuckets int) float64 {
 	hMap := new(Lists.HashMap)
 	hMap.Init(numBuckets, listType)

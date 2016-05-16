@@ -49,6 +49,8 @@ func readLines(path string) (lines []string, err error) {
 	return
 }
 
+/* For use with concurrency so if a thread finishes early,
+it can find new work to do */
 type section struct {
 	startln int
 	endln   int //Should stop at this line (not read it)
@@ -58,12 +60,13 @@ type section struct {
 
 func initSections(lines []string, numthreads int) []*section {
 	var numsections = (int)((float64)(numthreads) * math.Log2((float64)(numthreads)))
-	if numsections == 0 {
+	if numsections == 0 { //Can't' have 0 sections
 		numsections = 1
 	}
 	sections := make([]*section, numsections)
 	startln := 0
 	sectionln := numsections / len(lines)
+	//Partition the lines array into numthreads*ln(numthreads) sections
 	for i := 0; i < numsections-1; i++ {
 		thissection := new(section)
 		thissection.startln = startln
@@ -73,7 +76,7 @@ func initSections(lines []string, numthreads int) []*section {
 		startln = startln + sectionln
 		sections[i] = thissection
 	}
-	//Last section
+	//Last section, make sure it ends with the last line
 	thissection := new(section)
 	thissection.startln = startln
 	thissection.endln = len(lines)
@@ -91,8 +94,8 @@ func wcConcurrent(lines []string) time.Duration {
 	for i := 0; i < len(lines); i++ {
 		words := strings.Fields(lines[i])
 		for _, word := range words {
+			//clean up word (trim whitespace and spec chars
 			word = strings.ToLower(strings.Trim(word, ".,;*'`\":?!\\ {}()/"))
-			//fmt.Println(word)
 			val, ok := hmap[word]
 			if ok {
 				hmap[word] = val + 1
@@ -123,6 +126,7 @@ func countlines(hmap *Lists.HashMap, wg *sync.WaitGroup, sections []*section, li
 	var chosensection *section
 	for { //Until no valid sections left
 		validsec = false
+		//Search for an unstarted section
 		for i := startsection; i < len(sections); i++ {
 			if sections[i].done == false {
 				sections[i].lock.Lock()
@@ -141,6 +145,7 @@ func countlines(hmap *Lists.HashMap, wg *sync.WaitGroup, sections []*section, li
 		if validsec == false {
 			break
 		}
+		//Actually do the work
 		dosection(hmap, chosensection, lines)
 		chosensection.lock.Unlock()
 	}
@@ -151,8 +156,8 @@ func dosection(hmap *Lists.HashMap, chosensection *section, lines []string) {
 	for i := chosensection.startln; i < chosensection.endln; i++ {
 		words := strings.Fields(lines[i])
 		for _, word := range words {
+			//clean up word (trim whitespace and spec chars
 			word = strings.ToLower(strings.Trim(word, ".,;*'`\":?!\\[] {}()/"))
-			//fmt.Println(word)
 			val, there := hmap.Get(word)
 			if there == false {
 				zero := new(int32)
@@ -174,6 +179,7 @@ func dosection(hmap *Lists.HashMap, chosensection *section, lines []string) {
 }
 
 func main() {
+	//Command line input
 	var listTypeStr = flag.String("file", "texts/OriginOfSpecies.txt", "Which file to perform wc on")
 	flag.Parse()
 
@@ -185,11 +191,16 @@ func main() {
 	hMap := new(Lists.HashMap)
 	hMap.Init(numbuckets, Lists.LLListType)
 
+	/* Parallel compute */
 	paralleltime := wcParallel(lines, hMap, numthreads)
+	/* Concurrent compute */
 	concurrenttime := wcConcurrent(lines)
+
+	//Report results
 	keys, values := hMap.KeysAndValues()
 	maxkey := ""
 	maxval := (int32)(0)
+	//Output map
 	v := values.Front()
 	for k := keys.Front(); k != nil; k = k.Next() {
 		s := k.Value.(string)
@@ -201,7 +212,7 @@ func main() {
 		fmt.Printf("%s -> %d\n", s, *n)
 		v = v.Next()
 	}
+	//Report info
 	fmt.Printf("Most often used word is '%s', used %d times\n", maxkey, maxval)
-
 	fmt.Printf("Parallel took: %s\nConcurrent took: %s\n", paralleltime, concurrenttime)
 }

@@ -94,23 +94,17 @@ func testGoMap(goMap map[int]int) {
 func main() {
 	testHash()
 
+	//Take command line input
 	var listTypeStr = flag.String("type", "CG", "Type of list")
 	flag.Parse()
-
 	var listType = Lists.ParseType(*listTypeStr)
 
+	/* Our HMAP section */
 	hMap := new(Lists.HashMap)
+	//Create list of given type
 	hMap.Init(numBuckets, listType)
-
-	//list := new(Lists.LFList)
-	//list.Init()
-	//fmt.Println("Running tests...")
-	//Lists.Runtests(list)
-	//fmt.Println("Tests complete\n")
-
 	var wg sync.WaitGroup
 	wg.Add(numthreads)
-
 	startConc := time.Now()
 	for i := 0; i < numthreads; i++ {
 		go testHashMap(hMap, i, &wg)
@@ -118,19 +112,17 @@ func main() {
 	wg.Wait()
 	elapsedConc := time.Since(startConc)
 
-	//test go's map
+	/* Go's builtin map */
 	goMap := make(map[int]int)
-
 	startSeq := time.Now()
 	testGoMap(goMap)
 	elapsedSeq := time.Since(startSeq)
 
-	var wg2 sync.WaitGroup
-	wg2.Add(numthreads)
-
+	/* Go'd builtin with RW lock */
 	RWGoMap := new(Lists.GoMapRW)
 	RWGoMap.Init()
-
+	var wg2 sync.WaitGroup
+	wg2.Add(numthreads)
 	startGoConc := time.Now()
 	for i := 0; i < numthreads; i++ {
 		go testGoRWMap(RWGoMap, i, &wg2)
@@ -138,6 +130,7 @@ func main() {
 	wg2.Wait()
 	elapsedGoConc := time.Since(startGoConc)
 
+	/* Report results */
 	fmt.Printf("Finished testing %d threads with %d iterations per thread:\n",
 		numthreads, itersperthread)
 	fmt.Printf("Concurrent Hash map (%s) took: %s\n", *listTypeStr, elapsedConc)

@@ -13,6 +13,9 @@ type Node struct {
 	hash uint64
 }
 
+/* Simple Coarse grained linked list.
+One global lock for insert, get, remove.
+*/
 type CGList struct {
 	head      *Node
 	tail      *Node
@@ -50,7 +53,6 @@ func (l *CGList) KeysAndValues() (*list.List, *list.List) {
 	}
 
 	l.list_lock.Unlock()
-
 	return keys, values
 
 }
@@ -63,7 +65,6 @@ func (l *CGList) Printlist() {
 		fmt.Printf("%+v: %+v", t.key, t.val)
 		t = t.next
 	}
-
 	l.list_lock.Unlock()
 }
 
@@ -73,14 +74,12 @@ func (l *CGList) Insert(key interface{}, val interface{}) bool {
 	l.list_lock.Lock()
 
 	var returnval bool
-
 	var keyHash uint64
 	hash32, _ := getHash(key)
 	keyHash = uint64(hash32)
 
 	pred := l.head
 	curr := pred.next
-
 	for curr.hash < keyHash {
 		pred = curr
 		curr = curr.next
@@ -101,7 +100,6 @@ func (l *CGList) Insert(key interface{}, val interface{}) bool {
 	}
 
 	l.list_lock.Unlock()
-
 	return returnval
 
 }
@@ -112,13 +110,10 @@ func (l *CGList) Get(key interface{}) (interface{}, bool) {
 	var keyHash uint64
 	hash32, _ := getHash(key)
 	keyHash = uint64(hash32)
-
 	var curr *Node = l.head
-
 	for curr.hash < keyHash {
 		curr = curr.next
 	}
-
 	for curr.hash == keyHash {
 		if curr.hash == keyHash && curr.key == key {
 			l.list_lock.Unlock()
@@ -128,7 +123,6 @@ func (l *CGList) Get(key interface{}) (interface{}, bool) {
 	}
 
 	l.list_lock.Unlock()
-
 	return nil, false
 }
 
@@ -146,7 +140,6 @@ func (l *CGList) Remove(key interface{}) bool {
 		pred = curr
 		curr = curr.next
 	}
-
 	for curr.hash == keyHash {
 		if curr.hash == keyHash && curr.key == key {
 			pred.next = curr.next

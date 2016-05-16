@@ -1,15 +1,13 @@
 package Lists
 
-import(
-	"sync"
+import (
 	"fmt"
+	"sync"
 )
 
-
 type GoMapRW struct {
-	goMap map[interface{}]interface{}
+	goMap  map[interface{}]interface{}
 	RWLock *sync.RWMutex
-	
 }
 
 func (l *GoMapRW) Init() {
@@ -43,7 +41,7 @@ func (l *GoMapRW) Get(key interface{}) (interface{}, bool) {
 	} else {
 		return val, true
 	}
-	
+
 }
 
 func (l *GoMapRW) Remove(key interface{}) bool {
