@@ -4,6 +4,7 @@ import (
 	"./Lists"
 	"bufio"
 	"bytes"
+	"flag"
 	"fmt"
 	"io"
 	"math"
@@ -11,10 +12,11 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
-var numbuckets = 4
-var numthreads = 8
+var numbuckets = 1024
+var numthreads = 32
 
 //Taken from https://stackoverflow.com/questions/5884154/golang-read-text-file-into-string-array-and-write
 // Read a whole file into the memory and store it as array of lines
@@ -83,22 +85,45 @@ func initSections(lines []string, numthreads int) []*section {
 	return sections
 }
 
-func wcParallel(lines []string, hmap *Lists.HashMap, numthreads int) {
+func wcConcurrent(lines []string) time.Duration {
+	hmap := make(map[string]int)
+	start := time.Now()
+	for i := 0; i < len(lines); i++ {
+		words := strings.Fields(lines[i])
+		for _, word := range words {
+			word = strings.ToLower(strings.Trim(word, ".,;*'`\":?!\\ {}()/"))
+			//fmt.Println(word)
+			val, ok := hmap[word]
+			if ok {
+				hmap[word] = val + 1
+			} else {
+				hmap[word] = 1
+			}
+		}
+	}
+	elapsed := time.Since(start)
+	return elapsed
+}
+
+func wcParallel(lines []string, hmap *Lists.HashMap, numthreads int) time.Duration {
 	sections := initSections(lines, numthreads)
 	var wg sync.WaitGroup
 	wg.Add(numthreads)
+	start := time.Now()
 	for i := 0; i < numthreads; i++ {
-		go countlines(hmap, &wg, sections, lines)
+		go countlines(hmap, &wg, sections, lines, i)
 	}
 	wg.Wait()
+	elapsed := time.Since(start)
+	return elapsed
 }
 
-func countlines(hmap *Lists.HashMap, wg *sync.WaitGroup, sections []*section, lines []string) {
+func countlines(hmap *Lists.HashMap, wg *sync.WaitGroup, sections []*section, lines []string, startsection int) {
 	validsec := true
 	var chosensection *section
 	for { //Until no valid sections left
 		validsec = false
-		for i := 0; i < len(sections); i++ {
+		for i := startsection; i < len(sections); i++ {
 			if sections[i].done == false {
 				sections[i].lock.Lock()
 				if sections[i].done == false {
@@ -126,7 +151,7 @@ func dosection(hmap *Lists.HashMap, chosensection *section, lines []string) {
 	for i := chosensection.startln; i < chosensection.endln; i++ {
 		words := strings.Fields(lines[i])
 		for _, word := range words {
-			word = strings.ToLower(strings.Trim(word, ".,?!\\ {}()/"))
+			word = strings.ToLower(strings.Trim(word, ".,;*'`\":?!\\ {}()/"))
 			//fmt.Println(word)
 			val, there := hmap.Get(word)
 			if there == false {
@@ -149,7 +174,10 @@ func dosection(hmap *Lists.HashMap, chosensection *section, lines []string) {
 }
 
 func main() {
-	lines, err := readLines("test.txt")
+	var listTypeStr = flag.String("file", "texts/OriginOfSpecies.txt", "Which file to perform wc on")
+	flag.Parse()
+
+	lines, err := readLines(listTypeStr)
 	if err != nil {
 		fmt.Println("Error reading file!")
 		os.Exit(1)
@@ -157,6 +185,16 @@ func main() {
 	hMap := new(Lists.HashMap)
 	hMap.Init(numbuckets, Lists.LLListType)
 
-	wcParallel(lines, hMap, numthreads)
-	hMap.PrintMap()
+	paralleltime := wcParallel(lines, hMap, numthreads)
+	concurrenttime := wcConcurrent(lines)
+	keys, values := hMap.KeysAndValues()
+	v := values.Front()
+	for k := keys.Front(); k != nil; k = k.Next() {
+		s := k.Value.(string)
+		n := v.Value.(*int32)
+		fmt.Printf("%s -> %d\n", s, *n)
+		v = v.Next()
+	}
+
+	fmt.Printf("Parallel took: %s\nConcurrent took: %s\n", paralleltime, concurrenttime)
 }

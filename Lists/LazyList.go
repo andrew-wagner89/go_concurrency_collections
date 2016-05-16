@@ -1,6 +1,7 @@
 package Lists
 
 import (
+	"container/list"
 	"fmt"
 	"sync"
 )
@@ -42,6 +43,21 @@ func (l *LazyList) Init() {
 	l.head = make_nodeLL(0, nil, l.tail)
 	l.head.hash = MIN_UINT64 //head has minimum hash
 	l.tail.hash = MAX_UINT64 //tail has maximum hash
+
+}
+
+func (l *LazyList) KeysAndValues() (*list.List, *list.List) {
+	keys := list.New()
+	values := list.New()
+
+	t := l.head.next
+	for t != l.tail {
+		keys.PushBack(t.key)
+		values.PushBack(t.val)
+		t = t.next
+	}
+
+	return keys, values
 
 }
 

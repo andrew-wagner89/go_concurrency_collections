@@ -1,5 +1,9 @@
 package Lists
 
+import (
+	"container/list"
+)
+
 type List interface {
 	/* Inserts the key,val pair into the list
 	Returns true when key was not in the list
@@ -19,6 +23,12 @@ type List interface {
 	Returns val,false if key,val is NOT found
 	*/
 	Get(key interface{}) (interface{}, bool)
+
+	/* Returns Go's linked list for keys
+	and values. Likely not mutli-thread safe
+	*/
+
+	KeysAndValues() (*list.List, *list.List)
 
 	Init()
 	Printlist()

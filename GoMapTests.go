@@ -9,10 +9,10 @@ import (
 	"time"
 )
 
-var numthreads = 2
+var numthreads = 8
 var itersperthread = 1024 * 32
-var numBuckets = 1
-var maxkeyval = 2
+var numBuckets = 1024
+var maxkeyval = 4096
 
 func testHash() {
 	rand.Seed((int64)(0))
@@ -70,6 +70,27 @@ func testGoRWMap(hMap *Lists.GoMapRW, seed int, wg *sync.WaitGroup) {
 	}
 	wg.Done()
 }
+
+func testGoMap(goMap map[int]int) {
+	rand.Seed((int64)(0))
+	var method int
+	var key int
+	var val int
+	for i := 0; i < itersperthread*numthreads; i++ {
+		key = rand.Intn(maxkeyval)
+		val = rand.Intn(maxkeyval)
+		method = rand.Intn(3)
+
+		if method == 0 {
+			goMap[key] = val
+		} else if method == 1 {
+			delete(goMap, key)
+		} else {
+			_ = goMap[key]
+		}
+	}
+}
+
 func main() {
 	testHash()
 
@@ -101,24 +122,7 @@ func main() {
 	goMap := make(map[int]int)
 
 	startSeq := time.Now()
-	rand.Seed((int64)(0))
-	var method int
-	var key int
-	var val int
-	for i := 0; i < itersperthread*numthreads; i++ {
-		key = rand.Intn(maxkeyval)
-		val = rand.Intn(maxkeyval)
-		method = rand.Intn(3)
-
-		if method == 0 {
-			goMap[key] = val
-		} else if method == 1 {
-			delete(goMap, key)
-		} else {
-			_ = goMap[key]
-		}
-	}
-
+	testGoMap(goMap)
 	elapsedSeq := time.Since(startSeq)
 
 	var wg2 sync.WaitGroup

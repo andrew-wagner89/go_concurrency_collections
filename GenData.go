@@ -34,16 +34,33 @@ func testHashMap(hMap *Lists.HashMap, seed int, wg *sync.WaitGroup, iters int) {
 	wg.Done()
 }
 
-func genData() {
+func genDataBucketsConst() {
 	fmt.Println("#threads iterations seconds(CG) seconds(LF) seconds(LL)")
 	for _, threads := range threadsArr {
 		for iters := 1024; iters <= 1024*128; iters *= 2 {
 			fmt.Fprintf(os.Stderr, "%d %d\n", threads, iters)
-			cgS := oneTest(threads, iters, Lists.CGListType)
+			cgS := oneTest(threads, iters, Lists.CGListType, numBuckets)
 			fmt.Fprintf(os.Stderr, "CG done in %f\n", cgS)
-			lfS := oneTest(threads, iters, Lists.LFListType)
+			lfS := oneTest(threads, iters, Lists.LFListType, numBuckets)
 			fmt.Fprintf(os.Stderr, "LF done in %f\n", lfS)
-			llS := oneTest(threads, iters, Lists.LLListType)
+			llS := oneTest(threads, iters, Lists.LLListType, numBuckets)
+			fmt.Fprintf(os.Stderr, "LL done in %f\n", llS)
+			fmt.Printf("%d %d %f %f %f\n", threads, iters, cgS, lfS, llS)
+		}
+		fmt.Println()
+	}
+}
+func genDataItersConst() {
+	iters := 1024 * 64
+	fmt.Println("#buckets threads seconds(CG) seconds(LF) seconds(LL)")
+	for numBuckets := 1; numBuckets <= 1024; numBuckets *= 2 {
+		for _, threads := range threadsArr {
+			fmt.Fprintf(os.Stderr, "%d %d\n", numBuckets, threads)
+			cgS := oneTest(threads, iters, Lists.CGListType, numBuckets)
+			fmt.Fprintf(os.Stderr, "CG done in %f\n", cgS)
+			lfS := oneTest(threads, iters, Lists.LFListType, numBuckets)
+			fmt.Fprintf(os.Stderr, "LF done in %f\n", lfS)
+			llS := oneTest(threads, iters, Lists.LLListType, numBuckets)
 			fmt.Fprintf(os.Stderr, "LL done in %f\n", llS)
 			fmt.Printf("%d %d %f %f %f\n", threads, iters, cgS, lfS, llS)
 		}
@@ -51,7 +68,7 @@ func genData() {
 	}
 }
 
-func oneTest(threads, iters int, listType Lists.ListType) float64 {
+func oneTest(threads, iters int, listType Lists.ListType, numBuckets int) float64 {
 	hMap := new(Lists.HashMap)
 	hMap.Init(numBuckets, listType)
 	var wg sync.WaitGroup
@@ -66,5 +83,5 @@ func oneTest(threads, iters int, listType Lists.ListType) float64 {
 }
 
 func main() {
-	genData()
+	genDataItersConst()
 }

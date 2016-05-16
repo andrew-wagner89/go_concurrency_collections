@@ -52,8 +52,14 @@ func GetHash(key interface{}) (uint64, error) {
 	h := fnv.New64a()
 
 	switch v := key.(type) {
+	case *int:
+		h.Write([]byte(strconv.Itoa(*v)))
 	case int:
 		h.Write([]byte(strconv.Itoa(v)))
+	case *string:
+		h.Write([]byte(*v))
+	case string:
+		h.Write([]byte(v))
 	default:
 		var buf bytes.Buffer
 		enc := gob.NewEncoder(&buf)

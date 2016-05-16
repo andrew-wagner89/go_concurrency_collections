@@ -1,6 +1,7 @@
 package Lists
 
 import (
+	"container/list"
 	"fmt"
 	"os"
 )
@@ -53,6 +54,23 @@ func (hm *HashMap) Init(numBuckets int, listType ListType) {
 
 		hm.buckets[i].Init()
 	}
+}
+
+/* Likely not mutli-thread safe */
+func (hm *HashMap) KeysAndValues() (*list.List, *list.List) {
+	keys := list.New()
+	values := list.New()
+
+	for _, bucket := range hm.buckets {
+		thesekeys, thesevalues := bucket.KeysAndValues()
+		for e := thesekeys.Front(); e != nil; e = e.Next() {
+			keys.PushBack(e.Value)
+		}
+		for e := thesevalues.Front(); e != nil; e = e.Next() {
+			values.PushBack(e.Value)
+		}
+	}
+	return keys, values
 }
 
 func (hm *HashMap) Get(key interface{}) (interface{}, bool) {

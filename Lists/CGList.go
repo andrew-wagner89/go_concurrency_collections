@@ -1,6 +1,7 @@
 package Lists
 
 import (
+	"container/list"
 	"fmt"
 	"sync"
 )
@@ -34,6 +35,24 @@ func (l *CGList) Init() {
 	l.head.hash = MIN_UINT64
 	l.tail.hash = MAX_UINT64
 	l.list_lock = &sync.Mutex{}
+}
+func (l *CGList) KeysAndValues() (*list.List, *list.List) {
+	l.list_lock.Lock()
+
+	keys := list.New()
+	values := list.New()
+
+	t := l.head.next
+	for t != l.tail {
+		keys.PushBack(t.key)
+		values.PushBack(t.val)
+		t = t.next
+	}
+
+	l.list_lock.Unlock()
+
+	return keys, values
+
 }
 
 func (l *CGList) Printlist() {
