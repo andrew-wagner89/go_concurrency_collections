@@ -15,7 +15,8 @@ import (
 	"time"
 )
 
-var numbuckets = 2 * 1024
+//var numbuckets = 1024
+var numbuckets = 1024 * 64
 var numthreads = 32
 
 //Taken from https://stackoverflow.com/questions/5884154/golang-read-text-file-into-string-array-and-write
@@ -58,6 +59,7 @@ type section struct {
 	lock    *sync.Mutex
 }
 
+/* Create a list of partitions for the multiple threads to use */
 func initSections(lines []string, numthreads int) []*section {
 	var numsections = (int)((float64)(numthreads) * math.Log2((float64)(numthreads)))
 	if numsections == 0 { //Can't' have 0 sections
@@ -88,6 +90,7 @@ func initSections(lines []string, numthreads int) []*section {
 	return sections
 }
 
+/* Run thru each line */
 func wcConcurrent(lines []string) time.Duration {
 	hmap := make(map[string]int)
 	start := time.Now()
@@ -108,6 +111,23 @@ func wcConcurrent(lines []string) time.Duration {
 	return elapsed
 }
 
+/* Start the word count MapRW*/
+func wcGoRW(lines []string, numthreads int) time.Duration {
+	hmap := new(Lists.GoMapRW)
+	hmap.Init()
+	sections := initSections(lines, numthreads)
+	var wg sync.WaitGroup
+	wg.Add(numthreads)
+	start := time.Now()
+	for i := 0; i < numthreads; i++ {
+		go countlinesRW(hmap, &wg, sections, lines, i)
+	}
+	wg.Wait()
+	elapsed := time.Since(start)
+	return elapsed
+}
+
+/* Start the word count */
 func wcParallel(lines []string, hmap *Lists.HashMap, numthreads int) time.Duration {
 	sections := initSections(lines, numthreads)
 	var wg sync.WaitGroup
@@ -121,6 +141,39 @@ func wcParallel(lines []string, hmap *Lists.HashMap, numthreads int) time.Durati
 	return elapsed
 }
 
+/* Find a section and start on it*/
+func countlinesRW(hmap *Lists.GoMapRW, wg *sync.WaitGroup, sections []*section, lines []string, startsection int) {
+	validsec := true
+	var chosensection *section
+	for { //Until no valid sections left
+		validsec = false
+		//Search for an unstarted section
+		for i := startsection; i < len(sections); i++ {
+			if sections[i].done == false {
+				sections[i].lock.Lock()
+				if sections[i].done == false {
+					//Found valid section to work on
+					sections[i].done = true
+					validsec = true
+					chosensection = sections[i]
+					break
+				} else {
+					sections[i].lock.Unlock()
+					continue
+				}
+			}
+		}
+		if validsec == false {
+			break
+		}
+		//Actually do the work
+		dosectionRW(hmap, chosensection, lines)
+		chosensection.lock.Unlock()
+	}
+	wg.Done()
+}
+
+/* Find a section and start on it*/
 func countlines(hmap *Lists.HashMap, wg *sync.WaitGroup, sections []*section, lines []string, startsection int) {
 	validsec := true
 	var chosensection *section
@@ -152,6 +205,34 @@ func countlines(hmap *Lists.HashMap, wg *sync.WaitGroup, sections []*section, li
 	wg.Done()
 }
 
+/* Actually perform word counts on one section for MapRW*/
+func dosectionRW(hmap *Lists.GoMapRW, chosensection *section, lines []string) {
+	for i := chosensection.startln; i < chosensection.endln; i++ {
+		words := strings.Fields(lines[i])
+		for _, word := range words {
+			//clean up word (trim whitespace and spec chars
+			word = strings.ToLower(strings.Trim(word, ".,;*'`\":?!\\[] {}()/"))
+			val, there := hmap.Get(word)
+			if there == false {
+				zero := new(int32)
+				*zero = 0
+				val = zero
+				hmap.Insert(word, val)
+			}
+			count := val.(*int32)
+			//CAS to increment pointer
+			for {
+				currentval := *count
+				if atomic.CompareAndSwapInt32(count, currentval, currentval+1) {
+					break
+				}
+			}
+		}
+	}
+
+}
+
+/* Actually perform word counts on one section */
 func dosection(hmap *Lists.HashMap, chosensection *section, lines []string) {
 	for i := chosensection.startln; i < chosensection.endln; i++ {
 		words := strings.Fields(lines[i])
@@ -193,6 +274,8 @@ func main() {
 
 	/* Parallel compute */
 	paralleltime := wcParallel(lines, hMap, numthreads)
+	/* RW lock */
+	goRWtime := wcGoRW(lines, numthreads)
 	/* Concurrent compute */
 	concurrenttime := wcConcurrent(lines)
 
@@ -214,5 +297,5 @@ func main() {
 	}
 	//Report info
 	fmt.Printf("Most often used word is '%s', used %d times\n", maxkey, maxval)
-	fmt.Printf("Parallel took: %s\nConcurrent took: %s\n", paralleltime, concurrenttime)
+	fmt.Printf("Parallel took: %s\nRW with go map took: %s\nConcurrent took: %s\n", paralleltime, goRWtime, concurrenttime)
 }
